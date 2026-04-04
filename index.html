@@ -28,7 +28,7 @@
 <meta id="meta-tw-desc" name="twitter:description" content="Premium concierge travel for production, business, and leisure. WBE Certified. Marina Del Rey, CA."/>
 <meta id="meta-tw-img" name="twitter:image" content="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230b1e35'/%3E%3Ctext x='4' y='23' font-family='Georgia,serif' font-size='18' font-weight='bold' fill='%23c4923a'%3EA%3C/text%3E%3C/svg%3E"/>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"TravelAgency","name":"Azzurro Travel, Inc.","url":"https://azzurrotravel.com","telephone":"+18008358234","address":{"@type":"PostalAddress","streetAddress":"4712 Admiralty Way, Suite 138","addressLocality":"Marina Del Rey","addressRegion":"CA","postalCode":"90292","addressCountry":"US"},"openingHours":"Mo-Fr 09:30-17:30","foundingDate":"2008"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TravelAgency","name":"Azzurro Travel, Inc.","url":"https://azzurrotravel.com","telephone":"+18008358234","address":{"@type":"PostalAddress","streetAddress":"578 Washington Blvd, Suite 421","addressLocality":"Marina Del Rey","addressRegion":"CA","postalCode":"90292","addressCountry":"US"},"openingHours":"Mo-Fr 09:30-17:30","foundingDate":"2008"}</script>
 <style>
 /* ═══════════════════════════════════════════════
    FONTS — Georgia/serif stack for display,
@@ -463,6 +463,27 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
   .stats-row,.stats-row-lt,.hstats-inner { grid-template-columns:1fr }
   .st-item,.si-lt,.hs { border-right:none;border-bottom:1px solid rgba(255,255,255,.06) }
 }
+
+/* ── Services page specialty rows — mobile stack (image top, text bottom) ── */
+.svc-row { display:grid;grid-template-columns:1fr 1fr;gap:2px }
+.svc-row.mb { margin-bottom:2px }
+@media(max-width:768px){
+  .svc-row {
+    grid-template-columns:1fr !important;
+    gap:0 !important;
+  }
+  .svc-row .svc-img {
+    min-height:280px;
+    order:1;
+  }
+  .svc-row .svc-txt {
+    order:2;
+    padding:30px 22px !important;
+  }
+  /* flip rows where text is first in DOM → image should still appear on top */
+  .svc-row.flip .svc-txt { order:2 }
+  .svc-row.flip .svc-img { order:1 }
+}
 </style>
 </head>
 <body>
@@ -734,8 +755,8 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
         <h2 class="st">Four Ways We Serve <em>Your Journey</em></h2>
       </div>
       <!-- Production row -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px">
-        <div class="card rv" style="min-height:360px">
+      <div class="svc-row mb">
+        <div class="card rv svc-img" style="min-height:360px">
           <div class="card-bg g1"><div class="glow-b"></div></div>
           <div class="card-ph" data-bg="https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=700&q=80"></div>
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,16,28,.88) 0%,transparent 55%)"></div>
@@ -746,7 +767,7 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
             <button class="btn btn-gold btn-sm" onclick="go('production')">Explore <svg width="12" height="12"><use href="#i-arrow"/></svg></button>
           </div>
         </div>
-        <div class="rv d1" style="background:var(--ofw);padding:44px 40px;display:flex;flex-direction:column;justify-content:center">
+        <div class="rv d1 svc-txt" style="background:var(--ofw);padding:44px 40px;display:flex;flex-direction:column;justify-content:center">
           <div class="ey">Film · TV · Music · Commercials</div>
           <h3 style="font-family:var(--serif);font-size:26px;font-weight:normal;margin-bottom:14px">When the Set Doesn't Sleep,<br><em>Neither Do We</em></h3>
           <ul class="feat-list" style="margin-top:0">
@@ -757,8 +778,8 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
         </div>
       </div>
       <!-- Business row -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px">
-        <div class="rv" style="background:var(--navy);padding:44px 40px;display:flex;flex-direction:column;justify-content:center">
+      <div class="svc-row flip mb">
+        <div class="rv svc-txt" style="background:var(--navy);padding:44px 40px;display:flex;flex-direction:column;justify-content:center">
           <div class="ey ey-lt">Corporate · Executive · VIP</div>
           <h3 style="font-family:var(--serif);font-size:26px;font-weight:normal;color:#fff;margin-bottom:14px">Your Road Warrior<br><em style="color:var(--glt)">Support System</em></h3>
           <ul class="feat-list" style="margin-top:0">
@@ -768,7 +789,7 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
           </ul>
           <button class="btn btn-gold" style="margin-top:22px;align-self:flex-start" onclick="go('contact')"><svg width="13" height="13"><use href="#i-send"/></svg>Inquire Now</button>
         </div>
-        <div class="card rv d1" style="min-height:360px">
+        <div class="card rv d1 svc-img" style="min-height:360px">
           <div class="card-bg g2"><div class="glow-b"></div></div>
           <div class="card-ph" data-bg="https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=700&q=80"></div>
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,16,28,.75) 0%,transparent 50%)"></div>
@@ -776,8 +797,8 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
         </div>
       </div>
       <!-- Leisure row -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px">
-        <div class="card rv" style="min-height:360px">
+      <div class="svc-row mb">
+        <div class="card rv svc-img" style="min-height:360px">
           <div class="card-bg g3"><div class="glow-b"></div></div>
           <div class="card-ph" data-bg="https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?auto=format&fit=crop&w=700&q=80"></div>
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,16,28,.82) 0%,transparent 55%)"></div>
@@ -788,7 +809,7 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
             <button class="btn btn-gold btn-sm" onclick="go('lifestyle')">Explore Lifestyle <svg width="12" height="12"><use href="#i-arrow"/></svg></button>
           </div>
         </div>
-        <div class="rv d1" style="background:var(--cream);padding:44px 40px;display:flex;flex-direction:column;justify-content:center">
+        <div class="rv d1 svc-txt" style="background:var(--cream);padding:44px 40px;display:flex;flex-direction:column;justify-content:center">
           <div class="ey">Personal · Family · Honeymoon</div>
           <h3 style="font-family:var(--serif);font-size:26px;font-weight:normal;margin-bottom:14px">When It's Time to <em>Play</em></h3>
           <ul class="feat-list" style="margin-top:0">
@@ -799,8 +820,8 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
         </div>
       </div>
       <!-- Group row -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">
-        <div class="rv" style="background:var(--deep);padding:44px 40px;display:flex;flex-direction:column;justify-content:center">
+      <div class="svc-row flip">
+        <div class="rv svc-txt" style="background:var(--deep);padding:44px 40px;display:flex;flex-direction:column;justify-content:center">
           <div class="ey ey-lt">Corporate · Academic · Family</div>
           <h3 style="font-family:var(--serif);font-size:26px;font-weight:normal;color:#fff;margin-bottom:14px">Travel Better <em style="color:var(--glt)">Together</em></h3>
           <ul class="feat-list" style="margin-top:0">
@@ -810,7 +831,7 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
           </ul>
           <button class="btn btn-gold" style="margin-top:22px;align-self:flex-start" onclick="go('groups')">See Group Services <svg width="13" height="13"><use href="#i-arrow"/></svg></button>
         </div>
-        <div class="card rv d1" style="min-height:360px">
+        <div class="card rv d1 svc-img" style="min-height:360px">
           <div class="card-bg g9"><div class="glow-b"></div></div>
           <div class="card-ph" data-bg="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=700&q=80"></div>
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,16,28,.75) 0%,transparent 50%)"></div>
@@ -1240,7 +1261,7 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
         <div style="display:flex;flex-direction:column;gap:14px;margin:24px 0" class="rv">
           <div style="display:flex;align-items:flex-start;gap:13px"><div style="width:38px;height:38px;min-width:38px;border:1px solid var(--gb);border-radius:var(--r);display:flex;align-items:center;justify-content:center;color:var(--gold)"><svg width="14" height="14"><use href="#i-phone"/></svg></div><div><div style="font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--t3);margin-bottom:2px">Phone</div><div style="font-size:15px"><a href="tel:+18008358234" style="color:var(--blue)">(800) 835-8234</a></div></div></div>
           <div style="display:flex;align-items:flex-start;gap:13px"><div style="width:38px;height:38px;min-width:38px;border:1px solid var(--gb);border-radius:var(--r);display:flex;align-items:center;justify-content:center;color:var(--gold)"><svg width="14" height="14"><use href="#i-mail"/></svg></div><div><div style="font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--t3);margin-bottom:2px">Email</div><div style="font-size:15px"><a href="/cdn-cgi/l/email-protection#f990979f96b99883838c8b8b968d8b988f9c95d79a9694" style="color:var(--blue)"><span class="__cf_email__" data-cfemail="b0d9ded6dff0d1cacac5c2c2dfc4c2d1c6d5dc9ed3dfdd">[email&#160;protected]</span></a></div></div></div>
-          <div style="display:flex;align-items:flex-start;gap:13px"><div style="width:38px;height:38px;min-width:38px;border:1px solid var(--gb);border-radius:var(--r);display:flex;align-items:center;justify-content:center;color:var(--gold)"><svg width="14" height="14"><use href="#i-pin"/></svg></div><div><div style="font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--t3);margin-bottom:2px">Office</div><div style="font-size:14px;color:var(--t2);line-height:1.55">4712 Admiralty Way, Suite 138<br>Marina Del Rey, CA 90292</div></div></div>
+          <div style="display:flex;align-items:flex-start;gap:13px"><div style="width:38px;height:38px;min-width:38px;border:1px solid var(--gb);border-radius:var(--r);display:flex;align-items:center;justify-content:center;color:var(--gold)"><svg width="14" height="14"><use href="#i-pin"/></svg></div><div><div style="font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--t3);margin-bottom:2px">Office</div><div style="font-size:14px;color:var(--t2);line-height:1.55">578 Washington Blvd, Suite 421<br>Marina Del Rey, CA 90292</div></div></div>
         </div>
         <div style="background:var(--cream);border:1px solid var(--gb);border-radius:var(--r);padding:16px 20px;margin-bottom:22px" class="rv">
           <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gdk);margin-bottom:9px;font-weight:700">Office Hours</div>
@@ -1286,7 +1307,7 @@ var FT = '<div class="ft-grid"><div>'
   + '<div class="ft-soc"><a href="#" class="soc"><svg><use href="#i-ig"/></svg></a><a href="#" class="soc"><svg><use href="#i-li"/></svg></a><a href="#" class="soc"><svg><use href="#i-fb"/></svg></a></div>'
   + '</div><div><div class="fc-t">Services</div><ul class="fl-links"><li><a onclick="go(\'production\')">Production Travel</a></li><li><a onclick="go(\'services\')">Business Travel</a></li><li><a onclick="go(\'lifestyle\')">Leisure Travel</a></li><li><a onclick="go(\'groups\')">Group Travel</a></li></ul></div>'
   + '<div><div class="fc-t">Company</div><ul class="fl-links"><li><a onclick="go(\'about\')">About Us</a></li><li><a onclick="go(\'services\')">Why Azzurro</a></li><li><a onclick="go(\'contact\')">Contact</a></li></ul></div>'
-  + '<div><div class="fc-t">Contact</div><ul class="fl-links"><li><a href="tel:+18008358234">(800) 835-8234</a></li><li><a href="mailto:info@azzurrotravel.com">info@azzurrotravel.com</a></li><li style="color:rgba(255,255,255,.38);font-size:13px;line-height:1.6">4712 Admiralty Way, Ste 138<br>Marina Del Rey, CA 90292</li></ul></div>'
+  + '<div><div class="fc-t">Contact</div><ul class="fl-links"><li><a href="tel:+18008358234">(800) 835-8234</a></li><li><a href="mailto:info@azzurrotravel.com">info@azzurrotravel.com</a></li><li style="color:rgba(255,255,255,.38);font-size:13px;line-height:1.6">578 Washington Blvd, Suite 421<br>Marina Del Rey, CA 90292</li></ul></div>'
   + '</div><div class="ft-bot"><p class="ft-cp">&copy; 2026 Azzurro Travel, Inc. All rights reserved. | WBE Certified</p><nav class="ft-leg"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Accessibility</a></nav></div>';
 
 document.querySelectorAll('.site-footer').forEach(function(f){ f.innerHTML = FT; });
@@ -1448,7 +1469,7 @@ var SEO = {
   },
   contact: {
     title: 'Contact Azzurro Travel | Get Your Personalized Travel Quote',
-    desc:  'Contact Azzurro Travel at (800) 835-8234 or submit an online inquiry. Located at 4712 Admiralty Way, Marina Del Rey, CA. Our travel consultants respond within 2 business hours.',
+    desc:  'Contact Azzurro Travel at (800) 835-8234 or submit an online inquiry. Located at 578 Washington Blvd, Suite 421, Marina Del Rey, CA. Our travel consultants respond within 2 business hours.',
     kw:    'contact Azzurro Travel, travel agency Marina Del Rey CA, luxury travel quote, production travel inquiry, travel consultant Los Angeles, concierge travel booking',
     img:   'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80',
     url:   'https://azzurrotravel.com/contact/'
