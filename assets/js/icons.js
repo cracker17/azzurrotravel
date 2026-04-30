@@ -1,0 +1,53 @@
+/* ═════════════════════════════════════════════════════════════════════
+   Azzurro Travel — SVG Icon Sprite
+   Injected once into the <body> of every page.
+═════════════════════════════════════════════════════════════════════ */
+(function(){
+  var sprite = '<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0" aria-hidden="true" focusable="false"><defs>'
+    + '<symbol id="i-phone" viewBox="0 0 24 24"><path fill="currentColor" d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.32.57 3.58.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.24 1.01z"/></symbol>'
+    + '<symbol id="i-mail" viewBox="0 0 24 24"><path fill="currentColor" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></symbol>'
+    + '<symbol id="i-pin" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></symbol>'
+    + '<symbol id="i-clock" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>'
+    + '<symbol id="i-award" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="6" stroke="currentColor" stroke-width="2"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.11" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-star" viewBox="0 0 24 24"><polygon fill="currentColor" points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></symbol>'
+    + '<symbol id="i-film" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="2" stroke="currentColor" stroke-width="2"/><line x1="7" y1="2" x2="7" y2="22" stroke="currentColor" stroke-width="2"/><line x1="17" y1="2" x2="17" y2="22" stroke="currentColor" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/><line x1="2" y1="7" x2="7" y2="7" stroke="currentColor" stroke-width="2"/><line x1="17" y1="7" x2="22" y2="7" stroke="currentColor" stroke-width="2"/><line x1="2" y1="17" x2="7" y2="17" stroke="currentColor" stroke-width="2"/><line x1="17" y1="17" x2="22" y2="17" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-music" viewBox="0 0 24 24" fill="none"><path d="M9 18V5l12-2v13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="18" r="3" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="16" r="3" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-user" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-users" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-heart" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-globe" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-shield" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-map" viewBox="0 0 24 24" fill="none"><polygon points="1,6 1,22 8,18 16,22 23,18 23,2 16,6 8,2" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><line x1="8" y1="2" x2="8" y2="18" stroke="currentColor" stroke-width="2"/><line x1="16" y1="6" x2="16" y2="22" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-building" viewBox="0 0 24 24" fill="none"><path d="M3 22V8l9-6 9 6v14H3z" stroke="currentColor" stroke-width="2"/><path d="M9 22V12h6v10" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-plane" viewBox="0 0 24 24"><path fill="currentColor" d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></symbol>'
+    + '<symbol id="i-headset" viewBox="0 0 24 24" fill="none"><path d="M3 18v-6a9 9 0 0 1 18 0v6" stroke="currentColor" stroke-width="2"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3v5zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3v5z" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-send" viewBox="0 0 24 24" fill="none"><line x1="22" y1="2" x2="11" y2="13" stroke="currentColor" stroke-width="2"/><polygon points="22,2 15,22 11,13 2,9" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-lock" viewBox="0 0 24 24" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-arrow" viewBox="0 0 24 24" fill="none"><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="12,5 19,12 12,19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>'
+    + '<symbol id="i-up" viewBox="0 0 24 24" fill="none"><polyline points="18,15 12,9 6,15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></symbol>'
+    + '<symbol id="i-compass" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polygon points="16.24,7.76 14.12,14.12 7.76,16.24 9.88,9.88" stroke="currentColor" stroke-width="1.5"/></symbol>'
+    + '<symbol id="i-check" viewBox="0 0 24 24" fill="none"><polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></symbol>'
+    + '<symbol id="i-warn" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="currentColor"/></symbol>'
+    + '<symbol id="i-ig" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor"/></symbol>'
+    + '<symbol id="i-li" viewBox="0 0 24 24" fill="none"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="2"/><rect x="2" y="9" width="4" height="12" stroke="currentColor" stroke-width="2"/><circle cx="4" cy="4" r="2" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-fb" viewBox="0 0 24 24" fill="none"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-zap" viewBox="0 0 24 24"><polygon fill="currentColor" points="13,2 3,14 12,14 11,22 21,10 12,10"/></symbol>'
+    + '<symbol id="i-wine" viewBox="0 0 24 24" fill="none"><path d="M8 22h8M12 11v11M5 3l.5 8a6.5 6.5 0 0 0 13 0L19 3H5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>'
+    + '<symbol id="i-mountain" viewBox="0 0 24 24" fill="none"><path d="M3 20l7-12 3 5 3-3 5 10H3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>'
+    + '<symbol id="i-coffee" viewBox="0 0 24 24" fill="none"><path d="M18 8h1a4 4 0 0 1 0 8h-1" stroke="currentColor" stroke-width="2"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" stroke="currentColor" stroke-width="2"/><line x1="6" y1="1" x2="6" y2="4" stroke="currentColor" stroke-width="2"/><line x1="10" y1="1" x2="10" y2="4" stroke="currentColor" stroke-width="2"/><line x1="14" y1="1" x2="14" y2="4" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-briefcase" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-sunset" viewBox="0 0 24 24" fill="none"><path d="M17 18a5 5 0 0 0-10 0" stroke="currentColor" stroke-width="2"/><line x1="12" y1="2" x2="12" y2="9" stroke="currentColor" stroke-width="2"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64" stroke="currentColor" stroke-width="2"/><line x1="1" y1="18" x2="3" y2="18" stroke="currentColor" stroke-width="2"/><line x1="21" y1="18" x2="23" y2="18" stroke="currentColor" stroke-width="2"/><line x1="18.36" y1="11.64" x2="19.78" y2="10.22" stroke="currentColor" stroke-width="2"/><line x1="3" y1="22" x2="21" y2="22" stroke="currentColor" stroke-width="2"/><polyline points="7,18 12,13 17,18" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-calendar" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-eye" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '<symbol id="i-tag" viewBox="0 0 24 24" fill="none"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke="currentColor" stroke-width="2"/><line x1="7" y1="7" x2="7.01" y2="7" stroke="currentColor" stroke-width="2"/></symbol>'
+    + '</defs></svg>';
+
+  // Insert at top of body so all icon references work
+  if (document.body) {
+    document.body.insertAdjacentHTML('afterbegin', sprite);
+  } else {
+    document.addEventListener('DOMContentLoaded', function(){
+      document.body.insertAdjacentHTML('afterbegin', sprite);
+    });
+  }
+})();
