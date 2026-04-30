@@ -98,7 +98,7 @@
       + '<hr class="partners-divider" aria-hidden="true"/>'
       + '</div>'
       + '<div class="partners-track-wrap">'
-      + '<div class="partners-track" role="list">'
+      + '<div class="partners-track">'
       + oneSet + oneSet  // duplicate for seamless infinite scroll
       + '</div></div>'
       + '</aside>';
@@ -137,7 +137,7 @@
       + '<div><div class="fc-t">Contact</div><ul class="fl-links">'
       + '<li><a href="tel:+18008358234">(800) 835-8234</a></li>'
       + '<li><a href="mailto:hello@azzurrotravel.com">hello@azzurrotravel.com</a></li>'
-      + '<li style="color:rgba(255,255,255,.38);font-size:13px;line-height:1.6">578 Washington Blvd, Suite 421<br>Marina Del Rey, CA 90292</li>'
+      + '<li style="color:rgba(255,255,255,.62);font-size:13px;line-height:1.6">578 Washington Blvd, Suite 421<br>Marina Del Rey, CA 90292</li>'
       + '</ul></div>'
       + '</div><div class="ft-bot">'
       + '<p class="ft-cp">&copy; ' + year + ' Azzurro Travel, Inc. All rights reserved. | WBE Certified | CST# 2094339-40</p>'
@@ -261,9 +261,15 @@
   function bindHero() {
     var hp = document.getElementById('hhPhoto');
     if (hp) {
+      // Pick a width matching what was preloaded — browser cache will already have it
+      var w = window.innerWidth;
+      var size = w <= 640 ? 640 : w <= 1024 ? 1024 : w <= 1280 ? 1280 : 1920;
+      var quality = size >= 1920 ? 78 : 72;
+      var src = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=' + size + '&q=' + quality;
+      hp.style.backgroundImage = "url('" + src + "')";
       var hi = new Image();
       hi.onload = function () { hp.classList.add('in'); };
-      hi.src = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1920&q=80';
+      hi.src = src;
     }
     var hv = document.getElementById('hhVideo');
     if (hv) {
@@ -367,7 +373,15 @@
       bindHero();
       bindContactForm();
       fixGrids();
-      window.addEventListener('resize', fixGrids);
+      // Throttle resize calls — prevents forced layout reflows during continuous resize
+      var rafId = null;
+      window.addEventListener('resize', function () {
+        if (rafId) return;
+        rafId = requestAnimationFrame(function () {
+          fixGrids();
+          rafId = null;
+        });
+      }, { passive: true });
       loadPhotos();
       watchRv();
     } catch (err) {
