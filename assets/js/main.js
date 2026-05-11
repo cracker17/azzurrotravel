@@ -37,9 +37,9 @@
 
     var nav = '<nav id="nav" role="navigation" aria-label="Primary">'
       + '<a href="index.html" class="nav-logo" aria-label="Azzurro Travel — Home">'
-      + '<img src="https://azzurrotravel.com/wp-content/uploads/2025/10/Azzurro-Travel-Logo-White.svg"'
+      + '<img src="assets/img/Azzurro-Travel-Logo-White-2.svg?v=4"'
       + ' alt="Azzurro Travel — Luxury Production Travel Agency" class="logo-svg"'
-      + ' width="210" height="46"'
+      + ' width="330" height="46"'
       + ' onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'"/>'
       + '<svg class="logo-svg" viewBox="0 0 210 46" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:none">'
       + '<text x="0" y="28" font-family="Georgia,serif" font-size="26" fill="white" letter-spacing="3">AZZURRO</text>'
@@ -113,9 +113,9 @@
     var year = new Date().getFullYear();
     var ft = '<div class="ft-grid"><div>'
       + '<a href="index.html" aria-label="Azzurro Travel — Home" style="display:inline-block">'
-      + '<img src="https://azzurrotravel.com/wp-content/uploads/2025/10/Azzurro-Travel-Logo-White.svg"'
+      + '<img src="assets/img/Azzurro-Travel-Logo-White-2.svg?v=4"'
       + ' alt="Azzurro Travel — Luxury Travel Agency" style="height:34px;width:auto;display:block"'
-      + ' width="210" height="34" loading="lazy"'
+      + ' width="244" height="34" loading="lazy"'
       + ' onerror="this.style.display=\'none\'" /></a>'
       + '<p class="ft-about">A premium concierge travel agency offering exceptional personalized service for production, business, group, and leisure travelers since 2008.</p>'
       + '<div class="ft-soc">'
@@ -258,10 +258,14 @@
   }
 
   // ── Hero photo + video (home only) ─────────────────────────────────────────
+  // Strategy: build the YouTube player dynamically via the IFrame API instead
+  // of relying on a static <iframe> src. The API constructs and manages the
+  // iframe itself, which is more reliable across browsers, ad blockers, and
+  // mobile autoplay restrictions.
   function bindHero() {
+    // 1) Hero still photo (poster while video boots, also fallback if YT fails)
     var hp = document.getElementById('hhPhoto');
     if (hp) {
-      // Pick a width matching what was preloaded — browser cache will already have it
       var w = window.innerWidth;
       var size = w <= 640 ? 640 : w <= 1024 ? 1024 : w <= 1280 ? 1280 : 1920;
       var quality = size >= 1920 ? 78 : 72;
@@ -271,15 +275,139 @@
       hi.onload = function () { hp.classList.add('in'); };
       hi.src = src;
     }
+
+    // 2) Hero YouTube video — only proceed if the placeholder exists
     var hv = document.getElementById('hhVideo');
-    if (hv) {
-      hv.addEventListener('canplay', function () {
-        hv.style.opacity = '1';
-        var ph = document.getElementById('hhPhoto');
-        if (ph) ph.style.opacity = '0';
-      });
-      hv.load();
+    if (!hv) return;
+    var videoId = hv.getAttribute('data-yt-id');
+    if (!videoId) return;
+
+    var ytPlayer = null;
+    var playerReady = false;
+    var playAttempted = false;
+
+    // Inject the YT IFrame API script once (guard against double-load)
+    if (!window.YT && !document.getElementById('yt-iframe-api')) {
+      var tag = document.createElement('script');
+      tag.id = 'yt-iframe-api';
+      tag.src = 'https://www.youtube.com/iframe_api';
+      tag.async = true;
+      tag.onerror = function () {
+        if (window.console) console.warn('[hero] YT IFrame API failed to load (network blocked or offline)');
+      };
+      document.head.appendChild(tag);
     }
+
+    function fadePhotoOut() {
+      var ph = document.getElementById('hhPhoto');
+      if (ph) ph.style.opacity = '0';
+    }
+
+    function initYtPlayer() {
+      if (ytPlayer || !window.YT || !window.YT.Player) return;
+      try {
+        ytPlayer = new window.YT.Player('hhVideo', {
+          videoId: videoId,
+          host: 'https://www.youtube-nocookie.com',
+          width: '100%',
+          height: '100%',
+          playerVars: {
+            autoplay: 1,
+            mute: 1,
+            loop: 1,
+            playlist: videoId,    // required for loop on a single video
+            controls: 0,
+            showinfo: 0,
+            modestbranding: 1,
+            playsinline: 1,
+            rel: 0,
+            iv_load_policy: 3,
+            disablekb: 1,
+            fs: 0,
+            cc_load_policy: 0
+          },
+          events: {
+            onReady: function (e) {
+              playerReady = true;
+              if (window.console) console.log('[hero] YT player ready — starting video');
+              try {
+                e.target.mute();
+                e.target.playVideo();
+              } catch (err) {}
+              // After playback should have started, re-style the generated iframe
+              // so it covers the hero area properly (the API gives us a generic iframe)
+              var iframe = e.target.getIframe && e.target.getIframe();
+              if (iframe) {
+                iframe.style.cssText = 'position:absolute;top:50%;left:50%;width:100vw;height:56.25vw;min-height:100vh;min-width:177.77vh;transform:translate(-50%,-50%);pointer-events:none;border:0;z-index:0';
+                iframe.setAttribute('title', 'Azzurro Travel — luxury production travel background video');
+                iframe.setAttribute('aria-hidden', 'true');
+                iframe.setAttribute('tabindex', '-1');
+              }
+              // Give the video a moment to render frames, then fade the photo
+              setTimeout(fadePhotoOut, 1200);
+            },
+            onStateChange: function (e) {
+              // 0 = ENDED. Loop fallback in case the loop param ever fails.
+              if (e.data === 0) {
+                try { e.target.seekTo(0); e.target.playVideo(); } catch (err) {}
+              }
+              // 1 = PLAYING. First time we see PLAYING, fade the photo
+              if (e.data === 1) fadePhotoOut();
+            },
+            onError: function (e) {
+              // Common codes: 2 = invalid param, 5 = HTML5 error, 100 = not found,
+              // 101/150 = embedding disabled by owner. Keep the photo visible if any of these fire.
+              if (window.console) console.warn('[hero] YT player error code:', e && e.data, '— hero photo will remain visible as fallback');
+            }
+          }
+        });
+      } catch (err) {
+        if (window.console) console.warn('[hero] YT player construction failed:', err);
+      }
+    }
+
+    // The YT API calls this global when ready. Chain it instead of overwriting,
+    // in case anything else uses the same hook later.
+    if (window.YT && window.YT.Player) {
+      initYtPlayer();
+    } else {
+      var prevHook = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = function () {
+        if (typeof prevHook === 'function') { try { prevHook(); } catch (err) {} }
+        initYtPlayer();
+      };
+    }
+
+    // Watchdog — if the API never fires after 10s, surface a console warning
+    setTimeout(function () {
+      if (!playerReady && window.console) {
+        console.warn('[hero] YT player not ready after 10s. Possible causes:\n' +
+          '  1) Embedding is disabled in YouTube Studio for video ' + videoId + '\n' +
+          '  2) An ad/privacy blocker is preventing the YT API or iframe from loading\n' +
+          '  3) Network policy is blocking youtube.com / ytimg.com / youtube-nocookie.com');
+      }
+    }, 10000);
+
+    // First user gesture → force-play. Handles mobile autoplay edge cases
+    // (iOS Low Power Mode, Android data-saver, etc.) where the API's playVideo()
+    // call in onReady is silently rejected.
+    function forcePlayOnGesture() {
+      if (playAttempted) return;
+      playAttempted = true;
+      if (ytPlayer && ytPlayer.playVideo) {
+        try { ytPlayer.mute(); ytPlayer.playVideo(); } catch (err) {}
+      }
+    }
+    var gestureEvents = ['touchstart', 'click', 'scroll', 'keydown'];
+    function gestureHandler() {
+      forcePlayOnGesture();
+      gestureEvents.forEach(function (e2) {
+        window.removeEventListener(e2, gestureHandler);
+      });
+    }
+    gestureEvents.forEach(function (evt) {
+      window.addEventListener(evt, gestureHandler, { passive: true });
+    });
   }
 
   // ── Contact form — submits to Web3Forms (real backend) ─────────────────────

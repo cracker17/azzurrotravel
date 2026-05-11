@@ -294,7 +294,7 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
 .tl-item { display:flex;gap:28px;padding-bottom:32px }
 .tl-dot { width:36px;height:36px;min-width:36px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--navy);font-family:var(--serif);font-size:13px;font-weight:bold;z-index:1;box-shadow:0 0 0 4px var(--ofw) }
 .tl-yr { font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:3px }
-.tl-title { font-family:var(--serif);font-size:19px;margin-bottom:5px }
+.tl-title { font-family:var(--serif);font-size:19px;margin-bottom:5px;color:#ffffff }
 .tl-desc { font-size:13.5px;line-height:1.68;color:var(--t2) }
 
 /* page hero */
@@ -404,6 +404,8 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
   #nav { padding:12px 16px }
   .nav-links { display:none }
   .ham { display:flex }
+  .logo-svg { height:30px;max-width:200px }
+  #nav.scrolled .logo-svg { height:26px }
   .hh-h1 { font-size:40px }
   .hh-btns { flex-direction:column;align-items:center }
   .sec { padding:52px 16px }
@@ -423,6 +425,8 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
 @media(max-width:480px) {
   .stats-row,.stats-row-lt,.hstats-inner { grid-template-columns:1fr }
   .st-item,.si-lt,.hs { border-right:none;border-bottom:1px solid rgba(255,255,255,.06) }
+  .logo-svg { height:26px;max-width:170px }
+  #nav.scrolled .logo-svg { height:22px }
 }
 
 /* ── Services page specialty rows — mobile stack (image top, text bottom) ── */
