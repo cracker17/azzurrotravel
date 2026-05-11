@@ -37,7 +37,7 @@
 
     var nav = '<nav id="nav" role="navigation" aria-label="Primary">'
       + '<a href="index.html" class="nav-logo" aria-label="Azzurro Travel — Home">'
-      + '<img src="assets/img/Azzurro-Travel-Logo-White-2.svg?v=4"'
+      + '<img src="assets/img/Azzurro-Travel-Logo-White-2.svg?v=6"'
       + ' alt="Azzurro Travel — Luxury Production Travel Agency" class="logo-svg"'
       + ' width="330" height="46"'
       + ' onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'"/>'
@@ -113,7 +113,7 @@
     var year = new Date().getFullYear();
     var ft = '<div class="ft-grid"><div>'
       + '<a href="index.html" aria-label="Azzurro Travel — Home" style="display:inline-block">'
-      + '<img src="assets/img/Azzurro-Travel-Logo-White-2.svg?v=4"'
+      + '<img src="assets/img/Azzurro-Travel-Logo-White-2.svg?v=6"'
       + ' alt="Azzurro Travel — Luxury Travel Agency" style="height:34px;width:auto;display:block"'
       + ' width="244" height="34" loading="lazy"'
       + ' onerror="this.style.display=\'none\'" /></a>'
@@ -285,6 +285,36 @@
     var ytPlayer = null;
     var playerReady = false;
     var playAttempted = false;
+    var playbackFailed = false;
+    var bufferingTimer = null;
+    var bufferingCount = 0;
+
+    // ── Connection-aware quality strategy ────────────────────────────────────
+    // Decide HD vs low quality BEFORE the player initializes, based on the
+    // Network Information API (Chromium-based browsers + most Android browsers).
+    // Safari/Firefox don't expose this — we default to HD and let YT auto-adjust.
+    //
+    // effectiveType: '4g' (or 'unknown') → HD; '3g' → 720p; '2g'/'slow-2g' → 'small'
+    // saveData: true → respect data-saver, force low quality
+    var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    var preferredQuality = 'hd1080';   // first-priority HD
+    var fallbackQuality  = 'hd720';
+    if (conn) {
+      var et = conn.effectiveType || '';
+      var saveData = conn.saveData === true;
+      if (saveData || et === 'slow-2g' || et === '2g') {
+        preferredQuality = 'small';      // 240p — works on truly slow connections
+        fallbackQuality  = 'small';
+      } else if (et === '3g') {
+        preferredQuality = 'large';      // 480p — middle ground
+        fallbackQuality  = 'medium';     // 360p
+      }
+      // 4g, wifi-like, or unknown → keep hd1080 / hd720
+      if (window.console) {
+        console.log('[hero] Connection: ' + (et || 'unknown') +
+          (saveData ? ' (saveData)' : '') + ' → requesting ' + preferredQuality);
+      }
+    }
 
     // Inject the YT IFrame API script once (guard against double-load)
     if (!window.YT && !document.getElementById('yt-iframe-api')) {
@@ -293,39 +323,74 @@
       tag.src = 'https://www.youtube.com/iframe_api';
       tag.async = true;
       tag.onerror = function () {
-        if (window.console) console.warn('[hero] YT IFrame API failed to load (network blocked or offline)');
+        playbackFailed = true;
+        keepPhotoVisible();
+        if (window.console) console.warn('[hero] YT IFrame API failed to load — keeping hero photo as fallback');
       };
       document.head.appendChild(tag);
     }
 
     function fadePhotoOut() {
+      // Never fade if we know the video failed — keep the photo as the hero
+      if (playbackFailed) return;
       var ph = document.getElementById('hhPhoto');
       if (ph) ph.style.opacity = '0';
+    }
+    function keepPhotoVisible() {
+      // Ensure the photo stays at full opacity as the hero background
+      var ph = document.getElementById('hhPhoto');
+      if (ph) {
+        ph.classList.add('in');
+        ph.classList.add('fallback');   // boosts opacity from .32 → 1.0
+        ph.style.opacity = '';           // remove any inline opacity:0 we may have set
+      }
     }
 
     function initYtPlayer() {
       if (ytPlayer || !window.YT || !window.YT.Player) return;
+
+      // Pre-flight: warn if we're on file:// — YouTube blocks embeds from file origins (error 153)
+      if (window.location.protocol === 'file:') {
+        if (window.console) {
+          console.warn('[hero] ⚠️  Page is loaded from file:// — YouTube WILL block the embed with error 153.\n' +
+            'You must serve the site through a web server. Quick fix:\n' +
+            '  • Python:  python -m http.server 8000  → open http://localhost:8000\n' +
+            '  • Node:    npx serve                   → use the URL it prints\n' +
+            '  • VS Code: install "Live Server" extension, right-click index.html → Open with Live Server');
+        }
+      }
+
+      // Build playerVars with explicit origin when we can determine a real one.
+      // YouTube uses the origin to validate the embed; mismatches → error 153.
+      var pv = {
+        autoplay: 1,
+        mute: 1,
+        loop: 1,
+        playlist: videoId,    // required for loop on a single video
+        controls: 0,
+        showinfo: 0,
+        modestbranding: 1,
+        playsinline: 1,
+        rel: 0,
+        iv_load_policy: 3,
+        disablekb: 1,
+        fs: 0,
+        cc_load_policy: 0
+      };
+      // Only set origin when we have a real http(s) origin — never on file://
+      if (/^https?:$/.test(window.location.protocol) && window.location.origin) {
+        pv.origin = window.location.origin;
+        pv.widget_referrer = window.location.origin;
+      }
+
       try {
         ytPlayer = new window.YT.Player('hhVideo', {
           videoId: videoId,
-          host: 'https://www.youtube-nocookie.com',
+          // Use standard youtube.com host — youtube-nocookie occasionally triggers stricter origin checks
+          host: 'https://www.youtube.com',
           width: '100%',
           height: '100%',
-          playerVars: {
-            autoplay: 1,
-            mute: 1,
-            loop: 1,
-            playlist: videoId,    // required for loop on a single video
-            controls: 0,
-            showinfo: 0,
-            modestbranding: 1,
-            playsinline: 1,
-            rel: 0,
-            iv_load_policy: 3,
-            disablekb: 1,
-            fs: 0,
-            cc_load_policy: 0
-          },
+          playerVars: pv,
           events: {
             onReady: function (e) {
               playerReady = true;
@@ -333,6 +398,12 @@
               try {
                 e.target.mute();
                 e.target.playVideo();
+                // Request our chosen quality. YouTube may honor or auto-adjust.
+                // setPlaybackQuality() is technically deprecated but still accepted
+                // as a hint — for large players (we're at 100vw) YT usually serves HD anyway.
+                if (typeof e.target.setPlaybackQuality === 'function') {
+                  e.target.setPlaybackQuality(preferredQuality);
+                }
               } catch (err) {}
               // After playback should have started, re-style the generated iframe
               // so it covers the hero area properly (the API gives us a generic iframe)
@@ -347,17 +418,60 @@
               setTimeout(fadePhotoOut, 1200);
             },
             onStateChange: function (e) {
-              // 0 = ENDED. Loop fallback in case the loop param ever fails.
+              // 0 = ENDED, 1 = PLAYING, 2 = PAUSED, 3 = BUFFERING, 5 = CUED
               if (e.data === 0) {
+                // Loop fallback in case the loop param ever fails
                 try { e.target.seekTo(0); e.target.playVideo(); } catch (err) {}
               }
-              // 1 = PLAYING. First time we see PLAYING, fade the photo
-              if (e.data === 1) fadePhotoOut();
+              if (e.data === 1) {
+                // PLAYING — fade photo, clear any pending buffer-degradation
+                fadePhotoOut();
+                if (bufferingTimer) { clearTimeout(bufferingTimer); bufferingTimer = null; }
+              }
+              if (e.data === 3) {
+                // BUFFERING — start a watchdog. If we're still buffering 4s later,
+                // the connection is too slow for the current quality; drop down.
+                bufferingCount++;
+                if (bufferingTimer) clearTimeout(bufferingTimer);
+                bufferingTimer = setTimeout(function () {
+                  try {
+                    var current = e.target.getPlaybackQuality && e.target.getPlaybackQuality();
+                    // Step down through the quality ladder
+                    var nextQ = null;
+                    if (current === 'hd1080' || current === 'hd720') nextQ = 'large';   // → 480p
+                    else if (current === 'large') nextQ = 'medium';                     // → 360p
+                    else if (current === 'medium') nextQ = 'small';                     // → 240p
+                    if (nextQ && typeof e.target.setPlaybackQuality === 'function') {
+                      e.target.setPlaybackQuality(nextQ);
+                      if (window.console) console.log('[hero] Slow connection detected — dropping quality: ' + current + ' → ' + nextQ);
+                    }
+                  } catch (err) {}
+                }, 4000);
+                // If we've buffered 3+ times in this session, accept that the connection
+                // can't sustain video — keep the photo visible permanently
+                if (bufferingCount >= 3) {
+                  if (window.console) console.log('[hero] Repeated buffering — using hero photo as fallback');
+                  playbackFailed = true;
+                  keepPhotoVisible();
+                }
+              }
+            },
+            onPlaybackQualityChange: function (e) {
+              if (window.console) console.log('[hero] YT quality is now: ' + (e && e.data));
             },
             onError: function (e) {
-              // Common codes: 2 = invalid param, 5 = HTML5 error, 100 = not found,
-              // 101/150 = embedding disabled by owner. Keep the photo visible if any of these fire.
-              if (window.console) console.warn('[hero] YT player error code:', e && e.data, '— hero photo will remain visible as fallback');
+              var code = e && e.data;
+              var msg = '[hero] YT player error ' + code + ' — ';
+              if (code === 2) msg += 'invalid video ID parameter';
+              else if (code === 5) msg += 'HTML5 player error (browser/codec issue)';
+              else if (code === 100) msg += 'video not found, private, or removed';
+              else if (code === 101 || code === 150) msg += 'embedding is DISABLED on this video. Fix in YouTube Studio: Show more → Allow embedding → Save';
+              else if (code === 153) msg += 'origin/domain mismatch. The page must be served from http:// or https:// (not file://). Use a local server like "python -m http.server" or upload to your host';
+              else msg += 'unknown error';
+              // Any error means video won't play — lock in the photo fallback
+              playbackFailed = true;
+              keepPhotoVisible();
+              if (window.console) console.warn(msg + '. Hero photo will remain visible as fallback.');
             }
           }
         });
@@ -378,13 +492,17 @@
       };
     }
 
-    // Watchdog — if the API never fires after 10s, surface a console warning
+    // Watchdog — if the API never fires after 10s, lock in the photo fallback
     setTimeout(function () {
-      if (!playerReady && window.console) {
-        console.warn('[hero] YT player not ready after 10s. Possible causes:\n' +
-          '  1) Embedding is disabled in YouTube Studio for video ' + videoId + '\n' +
-          '  2) An ad/privacy blocker is preventing the YT API or iframe from loading\n' +
-          '  3) Network policy is blocking youtube.com / ytimg.com / youtube-nocookie.com');
+      if (!playerReady) {
+        playbackFailed = true;
+        keepPhotoVisible();
+        if (window.console) {
+          console.warn('[hero] YT player not ready after 10s — using hero photo as fallback. Possible causes:\n' +
+            '  1) Embedding is disabled in YouTube Studio for video ' + videoId + '\n' +
+            '  2) An ad/privacy blocker is preventing the YT API or iframe from loading\n' +
+            '  3) Network policy is blocking youtube.com / ytimg.com / youtube-nocookie.com');
+        }
       }
     }, 10000);
 
