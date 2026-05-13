@@ -37,7 +37,7 @@
 
     var nav = '<nav id="nav" role="navigation" aria-label="Primary">'
       + '<a href="index.html" class="nav-logo" aria-label="Azzurro Travel — Home">'
-      + '<img src="assets/img/Azzurro-Travel-Logo-White-2.svg?v=8"'
+      + '<img src="assets/img/Azzurro-Travel-Logo-White-2.svg?v=13"'
       + ' alt="Azzurro Travel — Luxury Production Travel Agency" class="logo-svg"'
       + ' width="330" height="46"'
       + ' onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'"/>'
@@ -113,7 +113,7 @@
     var year = new Date().getFullYear();
     var ft = '<div class="ft-grid"><div>'
       + '<a href="index.html" aria-label="Azzurro Travel — Home" style="display:inline-block">'
-      + '<img src="assets/img/Azzurro-Travel-Logo-White-2.svg?v=8"'
+      + '<img src="assets/img/Azzurro-Travel-Logo-White-2.svg?v=13"'
       + ' alt="Azzurro Travel — Luxury Travel Agency" style="height:34px;width:auto;display:block"'
       + ' width="244" height="34" loading="lazy"'
       + ' onerror="this.style.display=\'none\'" /></a>'
