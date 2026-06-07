@@ -66,9 +66,6 @@
   function buildPartners() {
     // Source list — easy to add/remove a partner: edit this array only.
     var partners = [
-      { name: 'WBENC — Women\'s Business Enterprise National Council',
-        src: 'assets/img/partners/wbenc.svg',
-        href: 'https://www.wbenc.org/' },
       { name: 'AICP — Association of Independent Commercial Producers',
         src: 'assets/img/partners/aicp.svg',
         href: 'https://www.aicp.com/' },

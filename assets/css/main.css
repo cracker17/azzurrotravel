@@ -550,7 +550,7 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
 }
 .partner-item:hover img {
   opacity: 1;
-  /* restore original brand colors on hover (Virtuoso splash, WBENC color C, etc.) */
+  /* restore original brand colors on hover (e.g. Virtuoso splash) */
   filter: none;
   transform: scale(1.06);
 }
