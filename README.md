@@ -52,21 +52,34 @@ that came from things that read as optimizations but were not:
   `#c4923a` is about 2.6:1 on the off-white and cream sections, which fails WCAG AA.
 
 Measured locally across all 11 pages after the change: **CLS 0.000** on both mobile
-and desktop; home page mobile weight **~918 KB** (down from ~15.9 MB).
+and desktop; home page **~918 KB on mobile** and **~3.3 MB on desktop**, down from
+~15.9 MB on both.
 
-### Still outstanding
+### The hero video
 
-`assets/video/Azzurro-Travel.mp4` is **14 MB**. Deferring it keeps it off the
-critical path and off phones entirely, but desktop visitors who stay on the hero
-still download it. It should be re-encoded — a 1280px, ~8s silent loop belongs
-around 1.5–2.5 MB:
+`assets/video/Azzurro-Travel.mp4` was **14.4 MB** (1920×1080, 30fps, 2.7 Mbps,
+plus a silent AAC track nobody could hear). It is now **3.2 MB** — 1280×720,
+24fps, video-only, `+faststart`. All 42 seconds and all 14 destinations are
+intact; nothing was trimmed.
+
+The exact encode, if it ever needs redoing (the 14.4 MB master is recoverable
+from git at commit `2f8b0a7`):
 
 ```bash
-ffmpeg -i Azzurro-Travel.mp4 -an -vf "scale=1280:-2,fps=24" -c:v libx264 -crf 30 -preset slow -movflags +faststart Azzurro-Travel-web.mp4
+ffmpeg -i MASTER.mp4 -an -vf "hqdn3d=4:3:6:6,scale=1280:-2,fps=24" -c:v libx264 -crf 34 -preset veryslow -profile:v high -level 4.0 -pix_fmt yuv420p -movflags +faststart assets/video/Azzurro-Travel.mp4
 ```
 
-A WebM/AV1 sibling would help further. Note the `<source type="video/webm">` that
-used to 404 on every load has been removed; re-add it only once the file exists.
+The `hqdn3d` pass matters more than it looks: the footage is grainy, and denoising
+before encoding is worth roughly a third of the file size on its own.
+
+AV1 (`libsvtav1 -crf 50 -preset 4`) was tested and came out at 2.9 MB — only ~7%
+better, because the reel hard-cuts to a new scene every ~3 seconds and every cut
+forces a keyframe, which blunts AV1's temporal advantage. Not worth a second file
+and a second `<source>`. The `<source type="video/webm">` that used to 404 on
+every page load has been removed; re-add it only if a WebM file actually exists.
+
+The deferral logic in `main.js` stays as-is even at 3.2 MB — it is still not a
+reasonable thing to push at a phone on cellular for a decorative background.
 
 ## File Structure
 
