@@ -1,0 +1,13 @@
+{
+  "name": "azzurrotravel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Azzurro Travel — static marketing site. The only build step is minifying assets/css and assets/js.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

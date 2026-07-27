@@ -4,7 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 
-<!-- Google tag (gtag.js) — deferred until first interaction or 3s idle for performance -->
+<!-- Google tag (gtag.js) — held back until the visitor interacts or the page
+     goes idle, so the 147 KB tag never competes with first paint. -->
 <script>
   (function () {
     window.dataLayer = window.dataLayer || [];
@@ -18,9 +19,8 @@
       loaded = true;
       var s = document.createElement('script');
       s.async = true;
-      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-X274SBTEZV';
-      document.head.appendChild(s);
-      // Send the deferred page_view once GA is loaded
+      // onload must be attached before the src assignment/append, or a cached
+      // script can fire before the handler exists and the page_view is lost.
       s.onload = function () {
         gtag('event', 'page_view');
         if (document.body && document.body.dataset.page === '404') {
@@ -30,13 +30,17 @@
           });
         }
       };
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-X274SBTEZV';
+      document.head.appendChild(s);
     }
-    // Trigger GA load on first user interaction OR after 3 seconds idle
-    var triggers = ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'];
-    triggers.forEach(function (t) {
+    ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'].forEach(function (t) {
       window.addEventListener(t, loadGA, { once: true, passive: true });
     });
-    setTimeout(loadGA, 3000);
+    // No interaction: wait for load, then for an idle slot on the main thread.
+    window.addEventListener('load', function () {
+      if (window.requestIdleCallback) requestIdleCallback(loadGA, { timeout: 4000 });
+      else setTimeout(loadGA, 2500);
+    });
   })();
 </script>
 
@@ -77,61 +81,27 @@
 <meta name="twitter:image:alt" content="Azzurro Travel: Luxury Production Travel Agency"/>
 
 <!-- Performance: preconnect to image CDNs -->
-<link rel="preconnect" href="https://images.unsplash.com" crossorigin/>
-<link rel="preconnect" href="https://azzurrotravel.com" crossorigin/>
+<link rel="preconnect" href="https://images.unsplash.com"/>
 <link rel="dns-prefetch" href="https://www.googletagmanager.com"/>
 
-<!-- Preload hero image so it starts fetching before CSS/JS parses -->
-<link rel="preload" as="image" fetchpriority="high"
-      href="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1280&q=72"
-      imagesrcset="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=640&q=72 640w, https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1024&q=72 1024w, https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1280&q=72 1280w, https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1920&q=78 1920w"
-      imagesizes="100vw"/>
+<!-- Preload the hero still (the LCP element). One preload per breakpoint, with
+     `media` queries that mirror the .hh-photo rules in main.css exactly — so the
+     browser fetches precisely the one variant it will paint, and never two. -->
+<link rel="preload" as="image" fetchpriority="high" media="(max-width:700px)"
+      href="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=768&q=58"/>
+<link rel="preload" as="image" fetchpriority="high" media="(min-width:701px) and (max-width:1599px)"
+      href="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1400&q=58"/>
+<link rel="preload" as="image" fetchpriority="high" media="(min-width:1600px)"
+      href="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1920&q=58"/>
 
-<!-- Stylesheet -->
-
-<!-- Critical CSS — inlined for fast first paint -->
-<style>
-/* ─────────── CRITICAL CSS — inlined in <head> ─────────── */
-:root{--navy:#06101c;--navy-2:#0a1b30;--blue:#1c68b5;--gold:#c4923a;--glt:#ddb06a;--ofw:#faf8f4;--ink:#2a3441;--mute:#6b7280;--serif:Georgia,'Times New Roman',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;--r:8px}
-*,::before,::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{font-family:var(--sans);background:var(--ofw);color:var(--ink);line-height:1.65;font-size:15px;overflow-x:hidden;min-height:100vh}
-a{color:inherit;text-decoration:none}
-img,svg{display:block;max-width:100%}
-button{font-family:inherit;cursor:pointer;border:none;background:none}
-.page{display:block}
-#nav{position:fixed;top:0;left:0;right:0;z-index:900;padding:18px 38px;display:flex;justify-content:space-between;align-items:center;background:transparent;transition:background .3s}
-#nav.scrolled{background:rgba(6,16,28,.92);backdrop-filter:blur(10px);padding:14px 38px}
-.nav-logo{display:flex;align-items:center}
-.logo-svg{height:46px;width:auto}
-.nav-links{display:flex;gap:38px;list-style:none;align-items:center}
-.nav-links a{color:rgba(255,255,255,.78);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;transition:color .25s;position:relative;padding:6px 0}
-.nav-links a:hover,.nav-links a.cur{color:var(--glt)}
-.n-cta{border:2px solid var(--gold);color:var(--gold)!important;padding:11px 24px;border-radius:3px;font-size:12px!important;font-weight:700;letter-spacing:.18em;transition:all .25s}
-.n-cta:hover{background:var(--gold);color:var(--navy)!important}
-.ham{display:none;width:32px;height:24px;flex-direction:column;justify-content:space-between}
-.ham span{display:block;width:100%;height:2px;background:#fff;transition:all .3s}
-@media (max-width:1024px){.nav-links{display:none}.ham{display:flex}#nav{padding:14px 22px}#nav.scrolled{padding:12px 22px}}
-.hh{position:relative;min-height:100vh;color:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.hh-photo{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s ease}
-.hh-photo.in{opacity:1}
-.hh-content{position:relative;z-index:3;text-align:center;max-width:920px;padding:0 24px}
-.hh-tag{display:inline-flex;align-items:center;gap:14px;color:rgba(255,255,255,.82);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:32px;font-weight:600}
-.hh-tit{font-family:var(--serif);font-size:clamp(48px,8vw,108px);line-height:1.02;letter-spacing:-.025em;font-weight:normal;margin-bottom:8px;opacity:0;transform:translateY(14px);animation:fu .9s .3s both}
-.hh-tit em{font-style:italic;color:var(--glt)}
-.hh-sub{font-size:15.5px;font-weight:normal;line-height:1.8;letter-spacing:.02em;color:rgba(255,255,255,.7);max-width:550px;margin:0 auto 36px;opacity:0;transform:translateY(14px);animation:fu .9s .72s both}
-@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-.btn{display:inline-flex;align-items:center;gap:9px;padding:13px 30px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;transition:all .25s;cursor:pointer;border:none}
-.btn-gold{background:var(--gold);color:var(--navy)}
-.btn-gold:hover{background:var(--glt);transform:translateY(-2px);box-shadow:0 6px 22px rgba(196,146,58,.35)}
-.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.38);color:#fff}
-.btn-ghost:hover{background:rgba(255,255,255,.08);border-color:#fff}
-</style>
-<link rel="preload" href="assets/css/main.css?v=13" as="style" onload="this.onload=null;this.rel='stylesheet'"/>
-<noscript><link rel="stylesheet" href="assets/css/main.css?v=13"/></noscript>
+<!-- Stylesheet — deliberately render-blocking. It is ~10 KB gzipped, and
+     loading it asynchronously (the previous rel=preload/onload swap) meant the
+     whole page painted unstyled first and then reflowed. That was the single
+     largest contributor to the 0.83 CLS. -->
+<link rel="stylesheet" href="assets/css/main.min.css?v=14"/>
 
 <!-- Structured Data -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"TravelAgency","@id":"https://azzurrotravel.com/#organization","name":"Azzurro Travel, Inc.","url":"https://azzurrotravel.com/","logo":"https://azzurrotravel.com/wp-content/uploads/2025/10/Azzurro-Travel-Logo-White.svg","image":"https://azzurrotravel.com/assets/img/og-image.jpg","description":"Lights. Camera. First Class. Azzurro Travel is Hollywood's most trusted luxury production travel agency for film crews, TV productions, music tours, and VIP clients. Available 24/7 worldwide with no after-hours fees. WBE Certified. Marina Del Rey, CA.","telephone":"+1-800-835-8234","email":"info@azzurrotravel.com","priceRange":"$$$$","address":{"@type":"PostalAddress","streetAddress":"578 Washington Blvd, Suite 421","addressLocality":"Marina Del Rey","addressRegion":"CA","postalCode":"90292","addressCountry":"US"},"geo":{"@type":"GeoCoordinates","latitude":33.9802,"longitude":-118.4517},"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"09:30","closes":"17:30"}],"foundingDate":"2008","founder":[{"@type":"Person","name":"Simon Jones"},{"@type":"Person","name":"Julie Johnson"}],"sameAs":[]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TravelAgency","@id":"https://azzurrotravel.com/#organization","name":"Azzurro Travel, Inc.","url":"https://azzurrotravel.com/","logo":"https://azzurrotravel.com/assets/img/Azzurro-Travel-Logo-White-2.svg","image":"https://azzurrotravel.com/assets/img/og-image.jpg","description":"Lights. Camera. First Class. Azzurro Travel is Hollywood's most trusted luxury production travel agency for film crews, TV productions, music tours, and VIP clients. Available 24/7 worldwide with no after-hours fees. WBE Certified. Marina Del Rey, CA.","telephone":"+1-800-835-8234","email":"info@azzurrotravel.com","priceRange":"$$$$","address":{"@type":"PostalAddress","streetAddress":"578 Washington Blvd, Suite 421","addressLocality":"Marina Del Rey","addressRegion":"CA","postalCode":"90292","addressCountry":"US"},"geo":{"@type":"GeoCoordinates","latitude":33.9802,"longitude":-118.4517},"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"09:30","closes":"17:30"}],"foundingDate":"2008","founder":[{"@type":"Person","name":"Simon Jones"},{"@type":"Person","name":"Julie Johnson"}],"sameAs":[]}</script>
 </head>
 <body data-page="home">
 
@@ -146,19 +116,20 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <!-- Hero video layer -->
     <div class="hh-photo" id="hhPhoto"></div>
     <div class="hh-video-wrap" id="hhVideoWrap">
-      <!-- Native HTML5 video — self-hosted MP4 with photo poster fallback.
-           autoplay+muted+playsinline is the cross-browser combo required for
-           background autoplay (including iOS Safari and Android Chrome). -->
+      <!-- The background loop is a 14 MB MP4, so it is deliberately NOT wired up
+           in the markup. main.js promotes data-src to src after the load event,
+           and only on a wide screen with a fast, non-metered connection.
+           Everywhere else the .hh-photo still behind this layer is the hero.
+           There is no poster= either: it would be a second full-size download of
+           the very picture .hh-photo is already showing.
+           muted+playsinline is the cross-browser combo required for background
+           autoplay (including iOS Safari and Android Chrome); .play() is called
+           explicitly from JS since the autoplay attribute is gone. -->
       <video id="hhVideo"
-             autoplay muted loop playsinline preload="auto"
-             poster="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1920&q=72"
+             muted loop playsinline preload="none"
+             data-src="assets/video/Azzurro-Travel.mp4"
              aria-hidden="true" tabindex="-1"
-             style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;border:0;z-index:0;pointer-events:none">
-        <!-- WebM (smaller, modern browsers) — added automatically if file exists -->
-        <source src="assets/video/Azzurro-Travel.webm" type="video/webm"/>
-        <!-- MP4 (universal fallback) -->
-        <source src="assets/video/Azzurro-Travel.mp4" type="video/mp4"/>
-      </video>
+             style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;border:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .8s ease"></video>
       <!-- 50% blue gradient overlay over video -->
       <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(10,27,48,.5) 0%,rgba(14,41,70,.5) 50%,rgba(6,16,28,.5) 100%);pointer-events:none;z-index:1"></div>
     </div>
@@ -196,7 +167,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px" id="homeSvcGrid">
         <div class="card rv" style="min-height:480px;grid-row:span 2">
           <div class="card-bg g1"><div class="glow-b"></div></div>
-          <div class="card-ph" data-bg="https://azzurrotravel.com/wp-content/uploads/2026/02/Production-Travel.jpg" data-fb="https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=900&q=85"></div>
+          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=800&q=58"></div>
           <div class="shade"></div>
           <div class="card-body">
             <span class="ctag">Film &amp; TV</span>
@@ -207,7 +178,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
         <div class="card rv d1" style="min-height:236px">
           <div class="card-bg g2"><div class="glow-b"></div></div>
-          <div class="card-ph" data-bg="https://azzurrotravel.com/wp-content/uploads/2026/02/Lifestyle-Travel.jpg" data-fb="https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=900&q=85"></div>
+          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=58"></div>
           <div class="shade"></div>
           <div class="card-body">
             <span class="ctag">Corporate</span>
@@ -218,7 +189,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
         <div class="card rv d2" style="min-height:236px">
           <div class="card-bg g3"><div class="glow-b"></div></div>
-          <div class="card-ph" data-bg="https://azzurrotravel.com/wp-content/uploads/2026/02/Family-Getaway-Discreet-Curated.png" data-fb="https://images.unsplash.com/photo-1573843981267-be1999ff37cd?auto=format&fit=crop&w=900&q=85"></div>
+          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1573843981267-be1999ff37cd?auto=format&fit=crop&w=800&q=58"></div>
           <div class="shade"></div>
           <div class="card-body">
             <span class="ctag">Lifestyle</span>
@@ -229,7 +200,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
         <div class="card rv d2" style="min-height:236px">
           <div class="card-bg g9"><div class="glow-b"></div></div>
-          <div class="card-ph" data-bg="https://azzurrotravel.com/wp-content/uploads/2026/02/Milestone-Celebration-Weekend-Epic-Lifestyle-Moment.png" data-fb="https://images.unsplash.com/photo-1539635278303-d4002c07eae3?auto=format&fit=crop&w=900&q=85"></div>
+          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1539635278303-d4002c07eae3?auto=format&fit=crop&w=800&q=58"></div>
           <div class="shade"></div>
           <div class="card-body">
             <span class="ctag">Groups</span>
@@ -244,7 +215,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
   <!-- ═══ EDITORIAL: full-bleed photo band — production mood ═══ -->
   <section class="photo-band photo-band--prod photo-band--tall"
-           style="background-image:url('https://images.unsplash.com/photo-1518929458119-e5bf444c30f4?auto=format&fit=crop&w=1920&q=72')">
+           data-bg="https://images.unsplash.com/photo-1518929458119-e5bf444c30f4?auto=format&fit=crop&w=1600&q=58">
     <div class="photo-band__inner rv">
       <div class="photo-band__cap">On Location · Worldwide</div>
       <h2 class="photo-band__title">From Hollywood&nbsp;Hills<br>to <em>Hidden&nbsp;Coves.</em></h2>
@@ -288,21 +259,21 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <div class="photo-six">
       <!-- Row 1: service categories -->
       <a href="production.html" class="photo-trio__cell rv"
-         style="background-image:url('https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=960&q=72')">
+         data-bg="https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=58">
         <div class="photo-trio__label">
           <small>Production</small>
           <strong>Crews · Cast · Cameras</strong>
         </div>
       </a>
       <a href="lifestyle.html" class="photo-trio__cell rv d1"
-         style="background-image:url('https://images.unsplash.com/photo-1530841377377-3ff06c0ca713?auto=format&fit=crop&w=960&q=72')">
+         data-bg="https://images.unsplash.com/photo-1530841377377-3ff06c0ca713?auto=format&fit=crop&w=800&q=58">
         <div class="photo-trio__label">
           <small>Lifestyle</small>
           <strong>Escape · Without&nbsp;Compromise</strong>
         </div>
       </a>
       <a href="groups.html" class="photo-trio__cell rv d2"
-         style="background-image:url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=960&q=72')">
+         data-bg="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=58">
         <div class="photo-trio__label">
           <small>Groups</small>
           <strong>Together · Anywhere</strong>
@@ -310,21 +281,21 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       </a>
       <!-- Row 2: signature destinations / travel inspiration -->
       <a href="lifestyle.html" class="photo-trio__cell rv"
-         style="background-image:url('https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=960&q=72')">
+         data-bg="https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=800&q=58">
         <div class="photo-trio__label">
           <small>Italy</small>
           <strong>Tuscany · Coast · Lakes</strong>
         </div>
       </a>
       <a href="lifestyle.html" class="photo-trio__cell rv d1"
-         style="background-image:url('https://images.unsplash.com/photo-1504851149312-7a075b496cc7?auto=format&fit=crop&w=960&q=72')">
+         data-bg="https://images.unsplash.com/photo-1504851149312-7a075b496cc7?auto=format&fit=crop&w=800&q=58">
         <div class="photo-trio__label">
           <small>Iceland</small>
           <strong>Aurora · Glaciers · Wild&nbsp;North</strong>
         </div>
       </a>
       <a href="lifestyle.html" class="photo-trio__cell rv d2"
-         style="background-image:url('https://images.unsplash.com/photo-1573843981267-be1999ff37cd?auto=format&fit=crop&w=960&q=72')">
+         data-bg="https://images.unsplash.com/photo-1573843981267-be1999ff37cd?auto=format&fit=crop&w=800&q=58">
         <div class="photo-trio__label">
           <small>Maldives</small>
           <strong>Overwater · Untouched</strong>
@@ -362,7 +333,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
 
 <!-- Site scripts -->
-<script src="assets/js/icons.js"></script>
-<script src="assets/js/main.js?v=13" defer></script>
+<script src="assets/js/icons.min.js?v=14" defer></script>
+<script src="assets/js/main.min.js?v=14" defer></script>
 </body>
 </html>

@@ -2,6 +2,9 @@
    Azzurro Travel — Shared site behavior
    Renders global nav + footer, handles mobile menu, scroll, reveals,
    lazy image loading, contact form, responsive grids.
+
+   SOURCE FILE. The pages load main.min.js, so after editing this file
+   you must run:  npm run build
 ═════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -167,38 +170,70 @@
   }
 
   // ── Lazy image background loader (with optional fallback URL) ──────────────
-  function loadPhotos() {
-    document.querySelectorAll('[data-bg]').forEach(function (el) {
-      if (el._pld) return;
-      var src = el.getAttribute('data-bg');
-      var fb = el.getAttribute('data-fb') || '';
-      if (!src) return;
-      function applyBg(url) {
-        el.style.backgroundImage = "url('" + url + "')";
-        var img = new Image();
-        img.onload = function () { el.classList.add('in'); el._pld = true; };
-        img.onerror = function () {
-          if (url !== fb && fb) applyBg(fb); else el._pld = true;
-        };
-        img.src = url;
-      }
-      applyBg(src);
-    });
-    // Inline-styled url() heroes
-    document.querySelectorAll('.card-ph[style*="url"]').forEach(function (el) {
-      if (el._pld) return;
-      var m = el.style.backgroundImage.match(/url\(['"]?([^'")\s]+)['"]?\)/);
-      if (!m) return;
+  // Previously every [data-bg] on the page was fetched during init, which meant
+  // a dozen full-size photos competing with the hero for bandwidth before the
+  // visitor had scrolled a pixel. Now each one waits until it is within 500px
+  // of the viewport.
+  var bgio;
+  function fetchBg(el) {
+    if (el._pld) return;
+    el._pld = true;
+    var fb = el.getAttribute('data-fb') || '';
+    function applyBg(url) {
       var img = new Image();
-      img.onload = function () { el.style.opacity = '1'; el._pld = true; };
-      img.onerror = function () { el._pld = true; };
-      img.src = m[1];
+      img.onload = function () {
+        el.style.backgroundImage = "url('" + url + "')";
+        el.classList.add('in');
+        // Several .card-ph heroes carry an inline `opacity:0`, which outranks
+        // the .card-ph.in rule. Clear it explicitly or they stay invisible.
+        if (el.style.opacity === '0') el.style.opacity = '1';
+      };
+      img.onerror = function () { if (url !== fb && fb) applyBg(fb); };
+      img.src = url;
+    }
+    applyBg(el.getAttribute('data-bg'));
+  }
+
+  function loadPhotos() {
+    var els = document.querySelectorAll('[data-bg]:not([data-bg=""])');
+    if (!('IntersectionObserver' in window)) {
+      els.forEach(fetchBg);
+      return;
+    }
+    if (!bgio) {
+      bgio = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          bgio.unobserve(e.target);
+          fetchBg(e.target);
+        });
+      // Horizontal margin matters for .gallery-reel, whose tiles sit off to the
+      // right of the viewport until the reel is swiped.
+      }, { rootMargin: '500px 600px' });
+    }
+    var vh = window.innerHeight || 800;
+    els.forEach(function (el) {
+      if (el._pld) return;
+      // Anything already on screen (the .ph-bg page heroes, for instance) is
+      // fetched straight away rather than waiting a frame for the observer.
+      // This also covers tabs restored in the background, where the observer
+      // never fires at all because the document is not being composited.
+      var r = el.getBoundingClientRect();
+      if (r.top < vh && r.bottom > -vh) fetchBg(el);
+      else bgio.observe(el);
     });
   }
 
   // ── Responsive grid fixes ──────────────────────────────────────────────────
+  // Bail out unless the breakpoint bucket actually changed. Without this the
+  // resize handler rewrote a dozen inline grid-template-columns values on every
+  // frame, each one invalidating layout for the whole document.
+  var gridBucket = null;
   function fixGrids() {
     var w = window.innerWidth;
+    var bucket = w <= 768 ? 'sm' : w <= 1024 ? 'md' : 'lg';
+    if (bucket === gridBucket) return;
+    gridBucket = bucket;
     var sg = document.getElementById('homeSvcGrid');
     if (sg) sg.style.gridTemplateColumns = w <= 768 ? '1fr' : w <= 1024 ? '1fr 1fr' : '1fr 1fr 1fr';
     ['homeWhyGrid', 'svcWhyGrid', 'lifeGrid', 'grpGrid', 'aboutValGrid', 'aboutCertGrid'].forEach(function (id) {
@@ -255,147 +290,101 @@
   }
 
   // ── Hero photo + video (home only) ─────────────────────────────────────────
-  // Strategy: native HTML5 <video> with autoplay+muted+playsinline (the standard
-  // cross-browser combo for background autoplay). Photo is loaded as both the
-  // <video poster> attribute and a separate .hh-photo layer behind the video,
-  // so visitors always see something — even on cold cache, broken connections,
-  // or if the MP4 file is missing.
+  // The still (.hh-photo) is the hero. main.css picks a per-breakpoint Unsplash
+  // URL that the <link rel=preload> tags in the page head have already started
+  // fetching, so it paints as soon as the stylesheet applies — nothing here has
+  // to run first.
+  //
+  // The MP4 is 14 MB, so it is treated as a pure enhancement: fetched only after
+  // the load event, only once the main thread is idle, and only on a wide screen
+  // with a fast, unmetered connection. Everyone else keeps the still, which is
+  // what the gradient overlay was designed to sit on top of anyway.
   function bindHero() {
-    // 1) Hero still photo layer — primary fallback, also shown briefly while
-    //    the video first frame is decoding (avoids any flash of nothing)
     var hp = document.getElementById('hhPhoto');
-    if (hp) {
-      var w = window.innerWidth;
-      var size = w <= 640 ? 640 : w <= 1024 ? 1024 : w <= 1280 ? 1280 : 1920;
-      var quality = size >= 1920 ? 78 : 72;
-      var src = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=' + size + '&q=' + quality;
-      hp.style.backgroundImage = "url('" + src + "')";
-      var hi = new Image();
-      hi.onload = function () { hp.classList.add('in'); };
-      hi.src = src;
-    }
+    if (hp) hp.classList.add('in');
 
-    // 2) Native HTML5 video — proceed only if the element exists
     var hv = document.getElementById('hhVideo');
     if (!hv || hv.tagName !== 'VIDEO') return;
+    var src = hv.getAttribute('data-src');
+    if (!src) return;
 
-    var playbackFailed = false;
-    var hasStartedPlaying = false;
-
-    function fadePhotoOut() {
-      // Never fade if we already know playback failed
-      if (playbackFailed) return;
-      var ph = document.getElementById('hhPhoto');
-      if (ph) ph.style.opacity = '0';
-    }
-    function keepPhotoVisible() {
-      // Bring the photo to full opacity as the permanent hero background
-      var ph = document.getElementById('hhPhoto');
-      if (ph) {
-        ph.classList.add('in');
-        ph.classList.add('fallback');   // .fallback boosts opacity from .32 → 1
-        ph.style.opacity = '';           // remove any inline opacity:0
+    function wantsVideo() {
+      // Called through window — some engines reject a detached matchMedia.
+      var mm = window.matchMedia ? function (q) { return window.matchMedia(q); } : null;
+      // Explicit "don't animate things at me" preference
+      if (mm && mm('(prefers-reduced-motion: reduce)').matches) return false;
+      // Phones and tablets keep the still. A 14 MB autoplay loop over cellular
+      // is not a trade worth making for a decorative background.
+      if (mm && !mm('(min-width: 1025px)').matches) return false;
+      var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      if (c) {
+        if (c.saveData) return false;
+        if (/2g|slow-2g|3g/.test(c.effectiveType || '')) return false;
       }
-    }
-    function markFailed(reason) {
-      if (playbackFailed) return;        // only run once
-      playbackFailed = true;
-      keepPhotoVisible();
-      // Hide the broken video element entirely so it can't render a black box
-      hv.style.display = 'none';
-      if (window.console) console.warn('[hero] Video unavailable — using hero photo as fallback. Reason:', reason);
+      return true;
     }
 
-    // Diagnostic / lifecycle event listeners
-    hv.addEventListener('loadedmetadata', function () {
-      if (window.console) {
-        console.log('[hero] Video metadata loaded: ' + hv.videoWidth + 'x' + hv.videoHeight + ', duration ' + Math.round(hv.duration) + 's');
-      }
-    });
-    hv.addEventListener('canplay', function () {
-      if (window.console) console.log('[hero] Video can play');
-    });
+    if (!wantsVideo()) {
+      // Remove it outright so no request is ever made for the MP4.
+      if (hv.parentNode) hv.parentNode.removeChild(hv);
+      return;
+    }
+
+    function drop() {
+      if (hv.parentNode) hv.parentNode.removeChild(hv);
+      if (hp) hp.classList.remove('dim');
+    }
+
     hv.addEventListener('playing', function () {
-      // First successful frame — fade out the photo layer
-      if (!hasStartedPlaying) {
-        hasStartedPlaying = true;
-        if (window.console) console.log('[hero] Video is now playing');
-        // Small delay so the first video frame is definitely visible before the
-        // photo fades out (avoids a brief gap of just the dark background)
-        setTimeout(fadePhotoOut, 200);
-      }
-    });
-    hv.addEventListener('stalled', function () {
-      if (window.console) console.log('[hero] Video stalled (network slow) — poster visible while we wait');
-    });
-    hv.addEventListener('error', function () {
-      // Triggered when the video source can't be loaded (404, network error, etc.)
-      // Note: this fires on the <video> element, not on individual <source> tags.
-      // If ALL source tags fail, we get a single error event here.
-      var err = hv.error;
-      var msg = 'unknown';
-      if (err) {
-        switch (err.code) {
-          case 1: msg = 'MEDIA_ERR_ABORTED — playback aborted'; break;
-          case 2: msg = 'MEDIA_ERR_NETWORK — network error while loading'; break;
-          case 3: msg = 'MEDIA_ERR_DECODE — video file is corrupt or codec not supported'; break;
-          case 4: msg = 'MEDIA_ERR_SRC_NOT_SUPPORTED — file not found (404) or format unsupported. Make sure assets/video/Azzurro-Travel.mp4 exists on the server'; break;
-        }
-      }
-      markFailed(msg);
-    });
+      hv.style.opacity = '1';
+      // Real frames are painting now, so the still can fall back to a wash.
+      if (hp) hp.classList.add('dim');
+    }, { once: true });
 
-    // Catch the case where the <source> tags all 404 but the video element
-    // itself doesn't fire 'error' (browser quirk on some Safari versions).
-    // After 5s with no metadata loaded, assume failure.
-    setTimeout(function () {
-      if (!hasStartedPlaying && hv.readyState === 0) {
-        markFailed('no metadata after 5s — video file likely missing or blocked');
-      }
-    }, 5000);
+    // Fires when the source 404s, the codec is unsupported, or the network dies.
+    hv.addEventListener('error', drop);
 
-    // Kick off playback. Most browsers will start autoplay on their own because
-    // of the autoplay+muted attributes, but calling .play() explicitly handles
-    // some edge cases (especially older Safari and browsers returning from cache).
-    function tryPlay() {
+    function play() {
       var p;
       try {
-        hv.muted = true;             // belt-and-suspenders for autoplay policy
+        hv.muted = true;   // belt and braces for the autoplay policy
         p = hv.play();
-      } catch (err) {
-        if (window.console) console.warn('[hero] play() threw:', err);
-        return;
-      }
-      // play() returns a Promise in modern browsers — catch rejection (which
-      // happens when autoplay policy blocks playback, e.g. iOS Low Power Mode)
+      } catch (err) { return; }
       if (p && typeof p.then === 'function') {
-        p.catch(function (err) {
-          if (window.console) console.log('[hero] Autoplay was rejected (' + err.name + '). Will retry on first user gesture.');
-          // Don't markFailed here — the gesture fallback below will recover.
+        p['catch'](function () {
+          // Autoplay refused (iOS Low Power Mode and similar). Try again on the
+          // first gesture; if that never comes, the still simply stays.
+          window.addEventListener('touchstart', play, { once: true, passive: true });
+          window.addEventListener('click', play, { once: true });
         });
       }
     }
 
-    // Run tryPlay() once the document is interactive (it usually already is
-    // by the time bindHero runs, but this is the safe pattern)
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', tryPlay, { once: true });
-    } else {
-      tryPlay();
+    function start() {
+      // If the visitor has already scrolled past the hero, there is nothing to
+      // show — don't spend 14 MB of their bandwidth on it.
+      var hero = document.getElementById('hh');
+      if (hero && hero.getBoundingClientRect().bottom <= 0) {
+        window.addEventListener('scroll', function once() {
+          if (hero.getBoundingClientRect().bottom > 0) {
+            window.removeEventListener('scroll', once);
+            start();
+          }
+        }, { passive: true });
+        return;
+      }
+      hv.src = src;
+      play();
     }
 
-    // ── First user gesture fallback ───────────────────────────────────────
-    // Handles iOS Low Power Mode and other rare cases where autoplay is
-    // silently blocked. The first time the user touches/clicks/scrolls,
-    // we attempt play() again.
-    function gestureHandler() {
-      if (hasStartedPlaying || playbackFailed) return;
-      tryPlay();
+    // Everything above the fold is done by 'load'; wait for an idle slot after
+    // that so the download never competes with the rest of the page.
+    function schedule() {
+      if (window.requestIdleCallback) requestIdleCallback(start, { timeout: 3000 });
+      else setTimeout(start, 1500);
     }
-    var gestureEvents = ['touchstart', 'click', 'scroll', 'keydown'];
-    gestureEvents.forEach(function (evt) {
-      window.addEventListener(evt, gestureHandler, { passive: true, once: true });
-    });
+    if (document.readyState === 'complete') schedule();
+    else window.addEventListener('load', schedule, { once: true });
   }
 
 

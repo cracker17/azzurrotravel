@@ -1,4 +1,7 @@
 /* ═══════════════════════════════════════════════
+   SOURCE FILE. The pages load main.min.css, so after
+   editing this file you must run:  npm run build
+   ───────────────────────────────────────────────
    FONTS — Georgia/serif stack for display,
    system-ui for body. Zero external dependencies.
 ═══════════════════════════════════════════════ */
@@ -10,7 +13,11 @@
   --blue:    #1a68b5;
   --gold:    #c4923a;
   --glt:     #ddb06a;
-  --gdk:     #a07025;
+  --gdk:     #7d5612;
+  /* --gold-txt: accessible gold for SMALL text on light backgrounds.
+     #c4923a only reaches ~2.6:1 on --ofw / --sand, which fails WCAG AA (4.5:1)
+     for the 10px uppercase eyebrows. This deeper bronze clears 5:1 on both. */
+  --gold-txt: #7d5612;
   --cream:   #f4efe6;
   --ofw:     #faf8f4;
   --white:   #ffffff;
@@ -87,21 +94,33 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
   font-weight:700!important;
   letter-spacing:.18em!important;
   transition:all .25s!important;
-  animation:ctaPulse 2.8s ease-in-out infinite;
-  box-shadow:0 0 0 0 rgba(196,146,58,.5);
   position:relative;
 }
-@keyframes ctaPulse {
-  0%,100% { box-shadow:0 0 0 0 rgba(196,146,58,.5); }
-  50%      { box-shadow:0 0 0 8px rgba(196,146,58,0); }
+/* The pulse lives on a pseudo-element and animates ONLY opacity, so the
+   compositor handles it. Animating box-shadow directly (the previous approach)
+   repainted the nav on every frame for the whole life of the page. */
+.n-cta::before {
+  content:'';
+  position:absolute;
+  inset:-3px;
+  border-radius:var(--r);
+  box-shadow:0 0 0 6px rgba(196,146,58,.3);
+  opacity:0;
+  pointer-events:none;
+  animation:ctaPulse 2.8s ease-in-out infinite;
 }
+@keyframes ctaPulse {
+  0%,100% { opacity:0 }
+  50%     { opacity:1 }
+}
+@media (prefers-reduced-motion: reduce) { .n-cta::before { animation:none } }
 .n-cta:hover {
   background:var(--gold)!important;
   color:var(--navy)!important;
-  animation:none!important;
   box-shadow:0 6px 22px rgba(196,146,58,.45)!important;
   transform:translateY(-2px)!important;
 }
+.n-cta:hover::before { animation:none;opacity:0 }
 .n-cta::after { display:none!important }
 
 /* hamburger */
@@ -145,10 +164,14 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
 .ey {
   display:inline-flex;align-items:center;gap:8px;
   font-size:10px;letter-spacing:.24em;text-transform:uppercase;
-  color:var(--gold);font-weight:700;margin-bottom:12px;
+  color:var(--gold-txt);font-weight:700;margin-bottom:12px;
 }
+/* the rule is decorative, so it keeps the brighter brand gold */
 .ey::before { content:'';display:block;width:24px;height:1px;background:var(--gold) }
 .ey-lt { color:var(--glt) }.ey-lt::before{background:var(--glt)}
+/* eyebrows sitting on the dark navy sections need the LIGHT gold, not the deep one */
+.sec-dk .ey,.sec-dp .ey,.partners-head .ey,.split__text--dark .ey { color:var(--glt) }
+.sec-dk .ey::before,.sec-dp .ey::before,.partners-head .ey::before,.split__text--dark .ey::before { background:var(--glt) }
 
 /* section title */
 .st { font-family:var(--serif);font-weight:normal;font-size:clamp(28px,4.2vw,54px);line-height:1.12;letter-spacing:-.01em;margin-bottom:14px }
@@ -306,7 +329,7 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
 .tl-desc { font-size:13.5px;line-height:1.68;color:var(--t2) }
 
 /* page hero */
-.pg-hero { position:relative;height:54vh;min-height:400px;display:flex;align-items:flex-end;overflow:hidden }
+.pg-hero { position:relative;height:54vh;height:54svh;min-height:400px;display:flex;align-items:flex-end;overflow:hidden }
 .ph-bg { position:absolute;inset:0;background-size:cover;background-position:center }
 .ph-shade { position:absolute;inset:0;background:linear-gradient(to top,rgba(6,16,28,.92) 0%,rgba(6,16,28,.55) 50%,rgba(6,16,28,.28) 100%) }
 .ph-content { position:relative;z-index:2;padding:0 48px 48px;color:#fff;max-width:860px }
@@ -335,13 +358,25 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
 /* ═══════════════════════════════════════════════
    HOME HERO
 ═══════════════════════════════════════════════ */
-#hh { position:relative;height:100vh;min-height:640px;display:flex;align-items:center;justify-content:center;overflow:hidden }
+/* svh (small viewport height) keeps the hero from resizing when the mobile
+   URL bar collapses — that resize was a large chunk of the reported CLS. */
+#hh { position:relative;height:100vh;height:100svh;min-height:640px;display:flex;align-items:center;justify-content:center;overflow:hidden }
 .hh-bg { position:absolute;inset:0;background:linear-gradient(155deg,rgba(6,16,28,.93) 0%,rgba(10,27,48,.8) 42%,rgba(6,16,28,.9) 100%),linear-gradient(220deg,#0e2946 0%,#06101c 52%,#0a1b30 100%) }
 .hh-mesh { position:absolute;inset:0;background:radial-gradient(circle at 22% 42%,rgba(28,104,181,.18) 0%,transparent 52%),radial-gradient(circle at 78% 65%,rgba(196,146,58,.07) 0%,transparent 44%);pointer-events:none }
-.hh-photo { position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;opacity:0;transition:opacity 1.4s ease;animation:zk 20s ease-in-out infinite alternate }
-.hh-photo.in { opacity:.32 }
-.hh-photo.fallback { opacity:1 !important }
+/* Hero still. This is the LCP element on mobile (the video is desktop-only now),
+   so the URL is served per-breakpoint and matched exactly by the <link rel=preload>
+   tags in each page head — one fetch, no duplicate download. */
+.hh-photo { position:absolute;inset:0;background-position:center;background-size:cover;background-repeat:no-repeat;background-image:url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1400&q=58');opacity:0;transition:opacity 1s ease;animation:zk 20s ease-in-out infinite alternate }
+@media (max-width:700px){ .hh-photo{ background-image:url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=768&q=58') } }
+@media (min-width:1600px){ .hh-photo{ background-image:url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1920&q=58') } }
+/* .72 rather than 1: the still blends into the dark .hh-bg gradient underneath,
+   which keeps the moody look the video version has and holds the white hero
+   copy well clear of the contrast floor over the bright sky. */
+.hh-photo.in { opacity:.72 }
+/* dropped back to a wash only once the video is genuinely painting frames */
+.hh-photo.dim { opacity:.32 }
 @keyframes zk { from{transform:scale(1)} to{transform:scale(1.07)} }
+@media (prefers-reduced-motion: reduce){ .hh-photo{animation:none} }
 .hh-vig { position:absolute;inset:0;background:linear-gradient(to top,rgba(6,16,28,.52) 0%,transparent 38%),linear-gradient(to bottom,rgba(6,16,28,.28) 0%,transparent 26%) }
 .hh-video-wrap { position:absolute;inset:0;overflow:hidden; }
 .hh-content { position:relative;z-index:2;text-align:center;color:#fff;padding:0 22px;max-width:900px }
@@ -367,6 +402,14 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
 /* ═══════════════════════════════════════════════
    FOOTER
 ═══════════════════════════════════════════════ */
+/* The partners strip and the footer are both injected by main.js after parse.
+   Reserving their height keeps the page from growing under a reader who has
+   already scrolled down. */
+.site-partners { min-height:322px;background:#06101c }
+.site-footer:empty { min-height:432px }
+@media(max-width:1024px){ .site-partners{min-height:286px} }
+@media(max-width:768px){ .site-partners{min-height:242px} .site-footer:empty{min-height:700px} }
+
 .site-footer { background:#020810;padding:52px 48px 24px;border-top:1px solid var(--gb) }
 .ft-grid { display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:44px;max-width:1160px;margin:0 auto;padding-bottom:36px;border-bottom:1px solid rgba(255,255,255,.055) }
 .ft-about { font-size:13px;line-height:1.78;color:rgba(255,255,255,.62);max-width:250px;margin:13px 0 18px }
@@ -406,7 +449,7 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
   .st-item:nth-child(2),.si-lt:nth-child(2),.hs:nth-child(2) { border-right:none }
   .st-item:nth-child(3),.si-lt:nth-child(3),.hs:nth-child(3) { border-top:1px solid rgba(255,255,255,.06) }
   .ft-grid { grid-template-columns:1fr 1fr }
-  .pg-hero { height:46vh;min-height:340px }
+  .pg-hero { height:46vh;height:46svh;min-height:340px }
   .ph-content { padding:0 24px 36px }
 }
 @media(max-width:768px) {
@@ -590,6 +633,7 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
 .err-hero {
   position: relative;
   min-height: 80vh;
+  min-height: 80svh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -861,7 +905,7 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
   font-weight: 400;
   margin-bottom: 22px;
 }
-.pull-quote__text em { font-style: normal; color: var(--gold); }
+.pull-quote__text em { font-style: normal; color: var(--gdk); }
 .pull-quote__attr {
   font-size: 11px;
   letter-spacing: .26em;
@@ -898,7 +942,7 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
   font-size: 10.5px;
   letter-spacing: .26em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: var(--gold-txt);
   font-weight: 600;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--rule-warm);
@@ -915,6 +959,8 @@ button{cursor:pointer;border:none;background:none;font-family:inherit}
 }
 .photo-trio__cell {
   position: relative;
+  /* placeholder tint — these load lazily, so the cell must not be transparent */
+  background-color: #12222e;
   background-size: cover;
   background-position: center;
   min-height: 360px;

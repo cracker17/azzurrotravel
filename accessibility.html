@@ -4,7 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 
-<!-- Google tag (gtag.js) — deferred until first interaction or 3s idle for performance -->
+<!-- Google tag (gtag.js) — held back until the visitor interacts or the page
+     goes idle, so the 147 KB tag never competes with first paint. -->
 <script>
   (function () {
     window.dataLayer = window.dataLayer || [];
@@ -18,15 +19,28 @@
       loaded = true;
       var s = document.createElement('script');
       s.async = true;
+      // onload must be attached before the src assignment/append, or a cached
+      // script can fire before the handler exists and the page_view is lost.
+      s.onload = function () {
+        gtag('event', 'page_view');
+        if (document.body && document.body.dataset.page === '404') {
+          gtag('event', 'page_not_found', {
+            page_location: window.location.href,
+            page_referrer: document.referrer
+          });
+        }
+      };
       s.src = 'https://www.googletagmanager.com/gtag/js?id=G-X274SBTEZV';
       document.head.appendChild(s);
-      s.onload = function () { gtag('event', 'page_view'); };
     }
-    var triggers = ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'];
-    triggers.forEach(function (t) {
+    ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'].forEach(function (t) {
       window.addEventListener(t, loadGA, { once: true, passive: true });
     });
-    setTimeout(loadGA, 3000);
+    // No interaction: wait for load, then for an idle slot on the main thread.
+    window.addEventListener('load', function () {
+      if (window.requestIdleCallback) requestIdleCallback(loadGA, { timeout: 4000 });
+      else setTimeout(loadGA, 2500);
+    });
   })();
 </script>
 
@@ -58,13 +72,15 @@
 <meta name="twitter:image" content="https://azzurrotravel.com/assets/img/og-image.jpg"/>
 
 <!-- Performance: preconnect to image CDNs -->
-<link rel="preconnect" href="https://images.unsplash.com" crossorigin/>
-<link rel="preconnect" href="https://azzurrotravel.com" crossorigin/>
+<link rel="preconnect" href="https://images.unsplash.com"/>
 <link rel="dns-prefetch" href="https://www.googletagmanager.com"/>
 
 <!-- Stylesheet -->
-<link rel="preload" href="assets/css/main.css?v=13" as="style" onload="this.onload=null;this.rel='stylesheet'"/>
-<noscript><link rel="stylesheet" href="assets/css/main.css?v=13"/></noscript>
+<!-- Stylesheet — deliberately render-blocking. It is ~10 KB gzipped, and
+     loading it asynchronously (the previous rel=preload/onload swap) meant the
+     whole page painted unstyled first and then reflowed. That was the single
+     largest contributor to the 0.83 CLS. -->
+<link rel="stylesheet" href="assets/css/main.min.css?v=14"/>
 
 <!-- Structured Data -->
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Accessibility Statement | Azzurro Travel","description":"Our commitment to accessible travel services and an accessible website for all clients.","url":"https://azzurrotravel.com/accessibility.html","publisher":{"@type":"TravelAgency","name":"Azzurro Travel, Inc."}}</script>
@@ -186,7 +202,7 @@
 <button id="stb" aria-label="Back to top"><svg aria-hidden="true"><use href="#i-up"/></svg></button>
 
 <!-- Site scripts -->
-<script src="assets/js/icons.js"></script>
-<script src="assets/js/main.js?v=13" defer></script>
+<script src="assets/js/icons.min.js?v=14" defer></script>
+<script src="assets/js/main.min.js?v=14" defer></script>
 </body>
 </html>

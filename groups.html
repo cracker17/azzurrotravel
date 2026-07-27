@@ -4,7 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 
-<!-- Google tag (gtag.js) — deferred until first interaction or 3s idle for performance -->
+<!-- Google tag (gtag.js) — held back until the visitor interacts or the page
+     goes idle, so the 147 KB tag never competes with first paint. -->
 <script>
   (function () {
     window.dataLayer = window.dataLayer || [];
@@ -18,9 +19,8 @@
       loaded = true;
       var s = document.createElement('script');
       s.async = true;
-      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-X274SBTEZV';
-      document.head.appendChild(s);
-      // Send the deferred page_view once GA is loaded
+      // onload must be attached before the src assignment/append, or a cached
+      // script can fire before the handler exists and the page_view is lost.
       s.onload = function () {
         gtag('event', 'page_view');
         if (document.body && document.body.dataset.page === '404') {
@@ -30,13 +30,17 @@
           });
         }
       };
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-X274SBTEZV';
+      document.head.appendChild(s);
     }
-    // Trigger GA load on first user interaction OR after 3 seconds idle
-    var triggers = ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'];
-    triggers.forEach(function (t) {
+    ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'].forEach(function (t) {
       window.addEventListener(t, loadGA, { once: true, passive: true });
     });
-    setTimeout(loadGA, 3000);
+    // No interaction: wait for load, then for an idle slot on the main thread.
+    window.addEventListener('load', function () {
+      if (window.requestIdleCallback) requestIdleCallback(loadGA, { timeout: 4000 });
+      else setTimeout(loadGA, 2500);
+    });
   })();
 </script>
 
@@ -77,52 +81,14 @@
 <meta name="twitter:image:alt" content="Azzurro Travel: Luxury Production Travel Agency"/>
 
 <!-- Performance: preconnect to image CDNs -->
-<link rel="preconnect" href="https://images.unsplash.com" crossorigin/>
-<link rel="preconnect" href="https://azzurrotravel.com" crossorigin/>
+<link rel="preconnect" href="https://images.unsplash.com"/>
 <link rel="dns-prefetch" href="https://www.googletagmanager.com"/>
 
-<!-- Stylesheet -->
-
-<!-- Critical CSS — inlined for fast first paint -->
-<style>
-/* ─────────── CRITICAL CSS — inlined in <head> ─────────── */
-:root{--navy:#06101c;--navy-2:#0a1b30;--blue:#1c68b5;--gold:#c4923a;--glt:#ddb06a;--ofw:#faf8f4;--ink:#2a3441;--mute:#6b7280;--serif:Georgia,'Times New Roman',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;--r:8px}
-*,::before,::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{font-family:var(--sans);background:var(--ofw);color:var(--ink);line-height:1.65;font-size:15px;overflow-x:hidden;min-height:100vh}
-a{color:inherit;text-decoration:none}
-img,svg{display:block;max-width:100%}
-button{font-family:inherit;cursor:pointer;border:none;background:none}
-.page{display:block}
-#nav{position:fixed;top:0;left:0;right:0;z-index:900;padding:18px 38px;display:flex;justify-content:space-between;align-items:center;background:transparent;transition:background .3s}
-#nav.scrolled{background:rgba(6,16,28,.92);backdrop-filter:blur(10px);padding:14px 38px}
-.nav-logo{display:flex;align-items:center}
-.logo-svg{height:46px;width:auto}
-.nav-links{display:flex;gap:38px;list-style:none;align-items:center}
-.nav-links a{color:rgba(255,255,255,.78);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;transition:color .25s;position:relative;padding:6px 0}
-.nav-links a:hover,.nav-links a.cur{color:var(--glt)}
-.n-cta{border:2px solid var(--gold);color:var(--gold)!important;padding:11px 24px;border-radius:3px;font-size:12px!important;font-weight:700;letter-spacing:.18em;transition:all .25s}
-.n-cta:hover{background:var(--gold);color:var(--navy)!important}
-.ham{display:none;width:32px;height:24px;flex-direction:column;justify-content:space-between}
-.ham span{display:block;width:100%;height:2px;background:#fff;transition:all .3s}
-@media (max-width:1024px){.nav-links{display:none}.ham{display:flex}#nav{padding:14px 22px}#nav.scrolled{padding:12px 22px}}
-.hh{position:relative;min-height:100vh;color:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.hh-photo{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s ease}
-.hh-photo.in{opacity:1}
-.hh-content{position:relative;z-index:3;text-align:center;max-width:920px;padding:0 24px}
-.hh-tag{display:inline-flex;align-items:center;gap:14px;color:rgba(255,255,255,.82);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:32px;font-weight:600}
-.hh-tit{font-family:var(--serif);font-size:clamp(48px,8vw,108px);line-height:1.02;letter-spacing:-.025em;font-weight:normal;margin-bottom:8px;opacity:0;transform:translateY(14px);animation:fu .9s .3s both}
-.hh-tit em{font-style:italic;color:var(--glt)}
-.hh-sub{font-size:15.5px;font-weight:normal;line-height:1.8;letter-spacing:.02em;color:rgba(255,255,255,.7);max-width:550px;margin:0 auto 36px;opacity:0;transform:translateY(14px);animation:fu .9s .72s both}
-@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-.btn{display:inline-flex;align-items:center;gap:9px;padding:13px 30px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;transition:all .25s;cursor:pointer;border:none}
-.btn-gold{background:var(--gold);color:var(--navy)}
-.btn-gold:hover{background:var(--glt);transform:translateY(-2px);box-shadow:0 6px 22px rgba(196,146,58,.35)}
-.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.38);color:#fff}
-.btn-ghost:hover{background:rgba(255,255,255,.08);border-color:#fff}
-</style>
-<link rel="preload" href="assets/css/main.css?v=13" as="style" onload="this.onload=null;this.rel='stylesheet'"/>
-<noscript><link rel="stylesheet" href="assets/css/main.css?v=13"/></noscript>
+<!-- Stylesheet — deliberately render-blocking. It is ~10 KB gzipped, and
+     loading it asynchronously (the previous rel=preload/onload swap) meant the
+     whole page painted unstyled first and then reflowed. That was the single
+     largest contributor to the 0.83 CLS. -->
+<link rel="stylesheet" href="assets/css/main.min.css?v=14"/>
 
 <!-- Structured Data -->
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","name":"Group Travel","description":"Azzurro Travel manages seamless group travel for 15 to 200+ travelers. Corporate retreats, conventions, student trips, family reunions, and entertainment production groups, with full-service coordination and on-trip support.","url":"https://azzurrotravel.com/groups.html","provider":{"@type":"TravelAgency","name":"Azzurro Travel, Inc.","url":"https://azzurrotravel.com/","telephone":"+1-800-835-8234"},"areaServed":{"@type":"Place","name":"Worldwide"}}</script>
@@ -135,7 +101,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 <div class="page" id="page-groups">
   <div class="pg-hero">
     <div class="ph-bg g9"><div class="glow-b"></div></div>
-    <div class="card-ph" data-bg="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1600&q=80" style="position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s"></div>
+    <div class="card-ph" data-bg="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1600&q=58" style="position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s"></div>
     <div class="ph-shade"></div>
     <div class="ph-content">
       <div class="bc"><a href="index.html">Home</a><span>›</span><span>Group Travel</span></div>
@@ -160,8 +126,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       </div>
       <div class="rv d2" style="position:relative">
         <div style="display:grid;grid-template-columns:1fr;gap:2px">
-          <div class="card" style="height:280px"><div class="card-bg g9"><div class="glow-b"></div></div><div class="card-ph" data-bg="https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=700&q=80"></div><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,16,28,.55) 0%,transparent 50%)"></div></div>
-          <div class="card" style="height:190px"><div class="card-bg g2"><div class="glow-b"></div></div><div class="card-ph" data-bg="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&w=700&q=80"></div></div>
+          <div class="card" style="height:280px"><div class="card-bg g9"><div class="glow-b"></div></div><div class="card-ph" data-bg="https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=700&q=58"></div><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,16,28,.55) 0%,transparent 50%)"></div></div>
+          <div class="card" style="height:190px"><div class="card-bg g2"><div class="glow-b"></div></div><div class="card-ph" data-bg="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&w=700&q=58"></div></div>
         </div>
         <div style="position:absolute;top:22px;right:-16px;background:var(--blue);color:#fff;padding:16px 20px;border-radius:4px;text-align:center;box-shadow:0 10px 26px rgba(26,104,181,.35)"><div style="font-family:var(--serif);font-size:32px;font-weight:normal;line-height:1">17+</div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;opacity:.8;margin-top:2px">Years Group Experience</div></div>
       </div>
@@ -184,7 +150,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
   <!-- ═══ EDITORIAL: groups photo band — alpine retreat ═══ -->
   <section class="photo-band"
-           style="background-image:url('https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1920&q=72')">
+           data-bg="https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1600&q=58">
     <div class="photo-band__inner rv">
       <div class="photo-band__cap">Together · Anywhere</div>
       <h2 class="photo-band__title">Forty-two travelers.<br>Twelve cities. <em>One itinerary</em>.</h2>
@@ -241,7 +207,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     </div>
     <div class="gallery-reel">
       <div class="gal-tile rv"
-           style="background-image:url('https://images.unsplash.com/photo-1485081669829-bacb8c7bb1f3?auto=format&fit=crop&w=700&q=72')">
+           data-bg="https://images.unsplash.com/photo-1485081669829-bacb8c7bb1f3?auto=format&fit=crop&w=700&q=58">
         <div class="gal-cap">
           <span class="gal-loc">Portugal · Lisbon</span>
           <strong>Sales Kickoff</strong>
@@ -249,7 +215,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
       </div>
       <div class="gal-tile rv d1"
-           style="background-image:url('https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=700&q=72')">
+           data-bg="https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=700&q=58">
         <div class="gal-cap">
           <span class="gal-loc">UAE · Dubai</span>
           <strong>Executive Summit</strong>
@@ -257,7 +223,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
       </div>
       <div class="gal-tile rv d2"
-           style="background-image:url('https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=700&q=72')">
+           data-bg="https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=700&q=58">
         <div class="gal-cap">
           <span class="gal-loc">Italy · Lake Como</span>
           <strong>Top-Performer Retreat</strong>
@@ -265,7 +231,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
       </div>
       <div class="gal-tile rv d3"
-           style="background-image:url('https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=700&q=72')">
+           data-bg="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=700&q=58">
         <div class="gal-cap">
           <span class="gal-loc">France · Paris</span>
           <strong>Brand Anniversary</strong>
@@ -273,7 +239,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
       </div>
       <div class="gal-tile rv"
-           style="background-image:url('https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=700&q=72')">
+           data-bg="https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=700&q=58">
         <div class="gal-cap">
           <span class="gal-loc">Japan · Tokyo</span>
           <strong>Investor Conference</strong>
@@ -281,7 +247,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
       </div>
       <div class="gal-tile rv d1"
-           style="background-image:url('https://images.unsplash.com/photo-1496588152823-86ff7695e68f?auto=format&fit=crop&w=700&q=72')">
+           data-bg="https://images.unsplash.com/photo-1496588152823-86ff7695e68f?auto=format&fit=crop&w=700&q=58">
         <div class="gal-cap">
           <span class="gal-loc">Iceland · Reykjavik</span>
           <strong>Leadership Offsite</strong>
@@ -289,7 +255,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
       </div>
       <div class="gal-tile rv d2"
-           style="background-image:url('https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=700&q=72')">
+           data-bg="https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=700&q=58">
         <div class="gal-cap">
           <span class="gal-loc">Spain · Barcelona</span>
           <strong>Product Launch</strong>
@@ -313,7 +279,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
 
 <!-- Site scripts -->
-<script src="assets/js/icons.js"></script>
-<script src="assets/js/main.js?v=13" defer></script>
+<script src="assets/js/icons.min.js?v=14" defer></script>
+<script src="assets/js/main.min.js?v=14" defer></script>
 </body>
 </html>

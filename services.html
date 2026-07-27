@@ -4,7 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 
-<!-- Google tag (gtag.js) — deferred until first interaction or 3s idle for performance -->
+<!-- Google tag (gtag.js) — held back until the visitor interacts or the page
+     goes idle, so the 147 KB tag never competes with first paint. -->
 <script>
   (function () {
     window.dataLayer = window.dataLayer || [];
@@ -18,9 +19,8 @@
       loaded = true;
       var s = document.createElement('script');
       s.async = true;
-      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-X274SBTEZV';
-      document.head.appendChild(s);
-      // Send the deferred page_view once GA is loaded
+      // onload must be attached before the src assignment/append, or a cached
+      // script can fire before the handler exists and the page_view is lost.
       s.onload = function () {
         gtag('event', 'page_view');
         if (document.body && document.body.dataset.page === '404') {
@@ -30,13 +30,17 @@
           });
         }
       };
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-X274SBTEZV';
+      document.head.appendChild(s);
     }
-    // Trigger GA load on first user interaction OR after 3 seconds idle
-    var triggers = ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'];
-    triggers.forEach(function (t) {
+    ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'].forEach(function (t) {
       window.addEventListener(t, loadGA, { once: true, passive: true });
     });
-    setTimeout(loadGA, 3000);
+    // No interaction: wait for load, then for an idle slot on the main thread.
+    window.addEventListener('load', function () {
+      if (window.requestIdleCallback) requestIdleCallback(loadGA, { timeout: 4000 });
+      else setTimeout(loadGA, 2500);
+    });
   })();
 </script>
 
@@ -77,52 +81,14 @@
 <meta name="twitter:image:alt" content="Azzurro Travel: Luxury Production Travel Agency"/>
 
 <!-- Performance: preconnect to image CDNs -->
-<link rel="preconnect" href="https://images.unsplash.com" crossorigin/>
-<link rel="preconnect" href="https://azzurrotravel.com" crossorigin/>
+<link rel="preconnect" href="https://images.unsplash.com"/>
 <link rel="dns-prefetch" href="https://www.googletagmanager.com"/>
 
-<!-- Stylesheet -->
-
-<!-- Critical CSS — inlined for fast first paint -->
-<style>
-/* ─────────── CRITICAL CSS — inlined in <head> ─────────── */
-:root{--navy:#06101c;--navy-2:#0a1b30;--blue:#1c68b5;--gold:#c4923a;--glt:#ddb06a;--ofw:#faf8f4;--ink:#2a3441;--mute:#6b7280;--serif:Georgia,'Times New Roman',serif;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;--r:8px}
-*,::before,::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{font-family:var(--sans);background:var(--ofw);color:var(--ink);line-height:1.65;font-size:15px;overflow-x:hidden;min-height:100vh}
-a{color:inherit;text-decoration:none}
-img,svg{display:block;max-width:100%}
-button{font-family:inherit;cursor:pointer;border:none;background:none}
-.page{display:block}
-#nav{position:fixed;top:0;left:0;right:0;z-index:900;padding:18px 38px;display:flex;justify-content:space-between;align-items:center;background:transparent;transition:background .3s}
-#nav.scrolled{background:rgba(6,16,28,.92);backdrop-filter:blur(10px);padding:14px 38px}
-.nav-logo{display:flex;align-items:center}
-.logo-svg{height:46px;width:auto}
-.nav-links{display:flex;gap:38px;list-style:none;align-items:center}
-.nav-links a{color:rgba(255,255,255,.78);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;transition:color .25s;position:relative;padding:6px 0}
-.nav-links a:hover,.nav-links a.cur{color:var(--glt)}
-.n-cta{border:2px solid var(--gold);color:var(--gold)!important;padding:11px 24px;border-radius:3px;font-size:12px!important;font-weight:700;letter-spacing:.18em;transition:all .25s}
-.n-cta:hover{background:var(--gold);color:var(--navy)!important}
-.ham{display:none;width:32px;height:24px;flex-direction:column;justify-content:space-between}
-.ham span{display:block;width:100%;height:2px;background:#fff;transition:all .3s}
-@media (max-width:1024px){.nav-links{display:none}.ham{display:flex}#nav{padding:14px 22px}#nav.scrolled{padding:12px 22px}}
-.hh{position:relative;min-height:100vh;color:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.hh-photo{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s ease}
-.hh-photo.in{opacity:1}
-.hh-content{position:relative;z-index:3;text-align:center;max-width:920px;padding:0 24px}
-.hh-tag{display:inline-flex;align-items:center;gap:14px;color:rgba(255,255,255,.82);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:32px;font-weight:600}
-.hh-tit{font-family:var(--serif);font-size:clamp(48px,8vw,108px);line-height:1.02;letter-spacing:-.025em;font-weight:normal;margin-bottom:8px;opacity:0;transform:translateY(14px);animation:fu .9s .3s both}
-.hh-tit em{font-style:italic;color:var(--glt)}
-.hh-sub{font-size:15.5px;font-weight:normal;line-height:1.8;letter-spacing:.02em;color:rgba(255,255,255,.7);max-width:550px;margin:0 auto 36px;opacity:0;transform:translateY(14px);animation:fu .9s .72s both}
-@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-.btn{display:inline-flex;align-items:center;gap:9px;padding:13px 30px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;transition:all .25s;cursor:pointer;border:none}
-.btn-gold{background:var(--gold);color:var(--navy)}
-.btn-gold:hover{background:var(--glt);transform:translateY(-2px);box-shadow:0 6px 22px rgba(196,146,58,.35)}
-.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.38);color:#fff}
-.btn-ghost:hover{background:rgba(255,255,255,.08);border-color:#fff}
-</style>
-<link rel="preload" href="assets/css/main.css?v=13" as="style" onload="this.onload=null;this.rel='stylesheet'"/>
-<noscript><link rel="stylesheet" href="assets/css/main.css?v=13"/></noscript>
+<!-- Stylesheet — deliberately render-blocking. It is ~10 KB gzipped, and
+     loading it asynchronously (the previous rel=preload/onload swap) meant the
+     whole page painted unstyled first and then reflowed. That was the single
+     largest contributor to the 0.83 CLS. -->
+<link rel="stylesheet" href="assets/css/main.min.css?v=14"/>
 
 <!-- Structured Data -->
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","name":"Services","description":"Explore Azzurro Travel's four concierge specialties: production travel for film and TV, business and VIP travel, luxury leisure, and group travel. Personalized white-glove service for every journey, every client, every time.","url":"https://azzurrotravel.com/services.html","provider":{"@type":"TravelAgency","name":"Azzurro Travel, Inc.","url":"https://azzurrotravel.com/","telephone":"+1-800-835-8234"},"areaServed":{"@type":"Place","name":"Worldwide"}}</script>
@@ -135,7 +101,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 <div class="page" id="page-services">
   <div class="pg-hero">
     <div class="ph-bg g2"><div class="glow-b"></div></div>
-    <div class="card-ph" data-bg="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1600&q=85"
+    <div class="card-ph" data-bg="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1600&q=58"
          style="position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s"></div>
     <div class="ph-shade"></div>
     <div class="ph-content">
@@ -158,7 +124,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       <div class="rv d2" style="position:relative">
         <div class="card" style="height:420px">
           <div class="card-bg g2"><div class="glow-b"></div></div>
-          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=700&q=85" data-fb="https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=700&q=85"></div>
+          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=700&q=58" data-fb="https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=700&q=58"></div>
           <div class="shade-full" style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,16,28,.55) 0%,transparent 55%)"></div>
           <div style="position:absolute;bottom:24px;left:24px;color:#fff"><div style="font-family:var(--serif);font-size:20px;font-weight:normal;line-height:1.35">Personalized service,<br><em style="color:var(--glt)">every single time.</em></div></div>
         </div>
@@ -180,7 +146,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       <div class="svc-row mb">
         <div class="card rv svc-img" style="min-height:360px">
           <div class="card-bg g1"><div class="glow-b"></div></div>
-          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=700&q=80"></div>
+          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=700&q=58"></div>
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,16,28,.88) 0%,transparent 55%)"></div>
           <div style="position:absolute;bottom:0;left:0;right:0;padding:28px;color:#fff">
             <span class="ctag">01</span>
@@ -213,7 +179,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
         <div class="card rv d1 svc-img" style="min-height:360px">
           <div class="card-bg g2"><div class="glow-b"></div></div>
-          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=700&q=80"></div>
+          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=700&q=58"></div>
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,16,28,.75) 0%,transparent 50%)"></div>
           <div style="position:absolute;bottom:0;padding:28px;color:#fff"><span class="ctag">02</span><div style="font-family:var(--serif);font-size:30px;font-weight:normal">Business Travel</div></div>
         </div>
@@ -222,7 +188,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       <div class="svc-row mb">
         <div class="card rv svc-img" style="min-height:360px">
           <div class="card-bg g3"><div class="glow-b"></div></div>
-          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?auto=format&fit=crop&w=700&q=80"></div>
+          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?auto=format&fit=crop&w=700&q=58"></div>
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,16,28,.82) 0%,transparent 55%)"></div>
           <div style="position:absolute;bottom:0;left:0;right:0;padding:28px;color:#fff">
             <span class="ctag">03</span>
@@ -255,7 +221,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
         <div class="card rv d1 svc-img" style="min-height:360px">
           <div class="card-bg g9"><div class="glow-b"></div></div>
-          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=700&q=80"></div>
+          <div class="card-ph" data-bg="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=700&q=58"></div>
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,16,28,.75) 0%,transparent 50%)"></div>
           <div style="position:absolute;bottom:0;padding:28px;color:#fff"><span class="ctag">04</span><div style="font-family:var(--serif);font-size:30px;font-weight:normal">Group Travel</div></div>
         </div>
@@ -265,7 +231,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
   <!-- ═══ EDITORIAL: quiet-luxury photo band — marble lobby ═══ -->
   <section class="photo-band photo-band--dark"
-           style="background-image:url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1920&q=72')">
+           data-bg="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1600&q=58">
     <div class="photo-band__inner rv">
       <div class="photo-band__cap">Service · Without the Noise</div>
       <h2 class="photo-band__title">The agency you call <em>once</em><br>and never need to call again.</h2>
@@ -282,7 +248,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     </div>
     <div class="gallery-mood">
       <div class="gal-tile rv"
-           style="background-image:url('https://images.unsplash.com/photo-1493804714600-6edb1cd93080?auto=format&fit=crop&w=1280&q=72')">
+           data-bg="https://images.unsplash.com/photo-1493804714600-6edb1cd93080?auto=format&fit=crop&w=1280&q=58">
         <div class="gal-cap">
           <span class="gal-loc">Production · 01</span>
           <strong>Cast, crew, gear, location</strong>
@@ -290,7 +256,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
       </div>
       <div class="gal-tile rv d1"
-           style="background-image:url('https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1280&q=72')">
+           data-bg="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1280&q=58">
         <div class="gal-cap">
           <span class="gal-loc">Corporate · 02</span>
           <strong>Executives on the move</strong>
@@ -298,7 +264,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
       </div>
       <div class="gal-tile rv d2"
-           style="background-image:url('https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1280&q=72')">
+           data-bg="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1280&q=58">
         <div class="gal-cap">
           <span class="gal-loc">Lifestyle · 03</span>
           <strong>Honeymoons, milestones, escapes</strong>
@@ -306,7 +272,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
       </div>
       <div class="gal-tile rv d3"
-           style="background-image:url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1280&q=72')">
+           data-bg="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1280&q=58">
         <div class="gal-cap">
           <span class="gal-loc">Groups · 04</span>
           <strong>From 12 to 200+</strong>
@@ -351,7 +317,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
 
 <!-- Site scripts -->
-<script src="assets/js/icons.js"></script>
-<script src="assets/js/main.js?v=13" defer></script>
+<script src="assets/js/icons.min.js?v=14" defer></script>
+<script src="assets/js/main.min.js?v=14" defer></script>
 </body>
 </html>
