@@ -1,6 +1,6 @@
 # Azzurro Travel — Multi-Page Website
 
-A 10-page + 404 SEO-optimized static site.
+An 11-page + 404 SEO-optimized static site.
 
 ## Build step
 
@@ -87,7 +87,7 @@ reasonable thing to push at a phone on cellular for a decorative background.
 azzurro/
 ├── index.html, services.html, production.html, lifestyle.html,
 ├── groups.html, about.html, contact.html, 404.html,
-├── privacy.html, terms.html, accessibility.html
+├── privacy.html, terms.html, accessibility.html, cookies.html
 ├── robots.txt, sitemap.xml
 ├── build.mjs, package.json
 └── assets/
@@ -110,16 +110,57 @@ footer text site-wide, edit only `main.js`. The partners and footer placeholders
 have reserved heights in CSS so the page does not grow underneath a reader who has
 already scrolled.
 
+The cookie bar needs no placeholder — it is appended to `<body>` by
+`buildConsent()` and is `position:fixed`, so it reserves nothing and shifts
+nothing.
+
 ## Google Analytics
 
-GA4 tag `G-X274SBTEZV` is deferred:
-- Loads on first user interaction (`scroll`, `mousemove`, `touchstart`, `keydown`, `click`)
-- Otherwise on `load`, then `requestIdleCallback` with a 4s timeout
-- Page view fires once the tag has loaded
-- Custom events: `generate_lead` (form submit), `page_not_found` (404 hits)
+GA4 tag `G-X274SBTEZV` is **consent-gated first, deferred second**:
+- Nothing is requested from Google until the visitor accepts analytics. The
+  inline `<head>` block on every page sets Consent Mode v2 to `denied` and only
+  exposes `window.azAnalyticsOn()`, which the consent banner calls on Accept.
+- Once consent exists the tag still waits for the first user interaction
+  (`scroll`, `mousemove`, `touchstart`, `keydown`, `click`), or for `load` then
+  `requestIdleCallback` with a 4s timeout.
+- Page view fires once the tag has loaded.
+- Custom events: `generate_lead` (form submit), `page_not_found` (404 hits).
 
-Trade-off: GA misses bounces that end before the page goes idle and involve no
-interaction at all.
+Trade-offs, both accepted deliberately: GA misses bounces that end before the
+page goes idle with no interaction at all, and it misses every visitor who
+refuses or ignores the banner. See below.
+
+## Cookie consent
+
+`buildConsent()` in `main.js` renders the bottom bar and the preferences panel;
+`main.css` holds the `cc-` styles; `cookies.html` is the policy page. Between
+them they implement GDPR + ePrivacy consent, applied to **every** visitor rather
+than only to detected EU traffic:
+
+- **Prior opt-in.** The GA4 tag is never fetched pre-consent, so there is no
+  "blocked but already loaded" grey area. The gate lives in the `<head>` of each
+  page because it has to run before any hit can be queued — that block is
+  identical in all 12 pages, so patch them together.
+- **Equal prominence.** Accept and Reject are the same size, weight and shape;
+  the only difference is colour. Nothing is pre-ticked, and there is no cookie
+  wall — every page behaves identically either way.
+- **Silence is refusal.** Ignoring the bar, closing the panel, pressing Escape
+  or clicking the backdrop all store nothing and leave analytics denied.
+- **Withdrawal.** A "Cookie Settings" button sits in the footer of every page
+  and on `cookies.html`; choosing Reject after an Accept also expires the `_ga`
+  cookies rather than merely stopping new ones.
+- **Storage.** One first-party cookie, `az_consent`, value
+  `v1-analytics{0|1}-{epoch ms}`, `path=/`, `SameSite=Lax`, `Secure` on HTTPS,
+  180 days (the CNIL's recommended re-ask interval).
+- **Versioning.** Bump `CC_VERSION` in `main.js` whenever the cookie inventory
+  changes. A stored answer carrying an older version is treated as undecided, so
+  visitors are re-asked instead of being held to consent for a different set of
+  cookies. Update the table in `cookies.html` and the version in its
+  `.legal-meta` line at the same time.
+
+Both the bar and the modal are `position:fixed`, so the feature adds 0.000 CLS.
+The back-to-top button is hidden while the bar is up (`body.cc-open #stb`) —
+offsetting it would need a JS-measured height that goes stale on resize.
 
 ## Contact form (Web3Forms)
 

@@ -1,7 +1,7 @@
 /* ═════════════════════════════════════════════════════════════════════
    Azzurro Travel — Shared site behavior
    Renders global nav + footer, handles mobile menu, scroll, reveals,
-   lazy image loading, contact form, responsive grids.
+   lazy image loading, contact form, responsive grids, cookie consent.
 
    SOURCE FILE. The pages load main.min.js, so after editing this file
    you must run:  npm run build
@@ -142,10 +142,279 @@
       + '</div><div class="ft-bot">'
       + '<p class="ft-cp">&copy; ' + year + ' Azzurro Travel, Inc. All rights reserved. | WBE Certified | CST# 2094339-40</p>'
       + '<nav class="ft-leg" aria-label="Legal">'
-      + '<a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="accessibility.html">Accessibility</a>'
+      + '<a href="privacy.html">Privacy</a><a href="terms.html">Terms</a>'
+      + '<a href="cookies.html">Cookies</a><a href="accessibility.html">Accessibility</a>'
+      // Withdrawing consent has to be as easy as giving it, so every page
+      // carries this. It reopens the preferences panel from buildConsent().
+      + '<button type="button" class="az-cc-btn">Cookie Settings</button>'
       + '</nav></div>';
 
     document.querySelectorAll('.site-footer').forEach(function (f) { f.innerHTML = ft; });
+
+    // Binds the footer control and any in-page one (cookies.html has its own).
+    document.querySelectorAll('.az-cc-btn').forEach(function (b) {
+      if (b._ccBound) return;
+      b._ccBound = true;
+      b.addEventListener('click', function () { openConsentPanel(); });
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     COOKIE CONSENT — GDPR (2016/679) + ePrivacy Directive (2002/58, as
+     amended), read together with EDPB Guidelines 05/2020 on consent.
+
+     What that means in practice, and what this code therefore does:
+
+       • Prior opt-in. Analytics cookies may not be set before the visitor
+         agrees, so the GA4 tag is not even fetched until Accept. The gate
+         itself lives in the <head> block of every page (window.azAnalyticsOn).
+       • Nothing is stored before a choice is made — not even this module's
+         own cookie.
+       • Accept and Reject carry equal weight. No pre-ticked boxes, no
+         cookie-wall, no "OK"-only bar (an OK-only bar records no valid
+         refusal, which is the single most common finding in DPA rulings).
+       • Withdrawal is as easy as consent: a "Cookie Settings" control in the
+         footer of every page, and rejecting actively deletes the _ga cookies
+         that a previous Accept created.
+       • Silence is refusal. Closing the panel or ignoring the bar leaves
+         analytics denied; the bar simply reappears next visit.
+       • The choice is remembered for 180 days (the CNIL's recommended
+         re-ask interval) and is versioned, so changing the cookie list later
+         re-asks instead of riding on stale consent.
+  ═══════════════════════════════════════════════════════════════════════ */
+  var CC_NAME    = 'az_consent';
+  var CC_VERSION = 'v1';
+  var CC_DAYS    = 180;
+
+  // Stored format: "v1-analytics1-1767225600000" — version, decision, timestamp.
+  // Deliberately not JSON: the <head> gate has to read it with one regex before
+  // anything else on the page runs.
+  function ccRead() {
+    var m = document.cookie.match(/(?:^|;\s*)az_consent=([^;]*)/);
+    if (!m) return null;
+    var p = /^(v\d+)-analytics([01])-(\d+)$/.exec(decodeURIComponent(m[1]));
+    // Unparseable, or consented to an older cookie list → treat as undecided.
+    if (!p || p[1] !== CC_VERSION) return null;
+    return { analytics: p[2] === '1', at: +p[3] };
+  }
+
+  function ccWrite(analytics) {
+    var val = CC_VERSION + '-analytics' + (analytics ? '1' : '0') + '-' + Date.now();
+    document.cookie = CC_NAME + '=' + val
+      + ';path=/;max-age=' + (CC_DAYS * 86400) + ';SameSite=Lax'
+      + (location.protocol === 'https:' ? ';Secure' : '');
+  }
+
+  // Withdrawal has to actually remove what consent allowed. GA sets _ga on the
+  // registrable domain, so the same name is expired against every plausible
+  // domain/path combination — the browser silently ignores the misses.
+  function ccDropAnalyticsCookies() {
+    var host = location.hostname;
+    var scopes = ['', host, '.' + host];
+    var root = host.split('.').slice(-2).join('.');
+    if (root !== host) scopes.push(root, '.' + root);
+    document.cookie.split(';').forEach(function (raw) {
+      var name = raw.split('=')[0].replace(/^\s+|\s+$/g, '');
+      if (!/^(_ga|_gid|_gat)/.test(name)) return;
+      scopes.forEach(function (d) {
+        document.cookie = name + '=;path=/;max-age=0' + (d ? ';domain=' + d : '');
+      });
+    });
+  }
+
+  function ccApply(analytics) {
+    if (analytics) {
+      // Flips Consent Mode to granted and arms the deferred GA4 loader.
+      if (typeof window.azAnalyticsOn === 'function') window.azAnalyticsOn();
+    } else {
+      if (typeof gtag === 'function') {
+        try { gtag('consent', 'update', { 'analytics_storage': 'denied' }); } catch (e) {}
+      }
+      ccDropAnalyticsCookies();
+    }
+  }
+
+  function ccToast(msg) {
+    var old = document.getElementById('cc-toast');
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+    var t = document.createElement('div');
+    t.id = 'cc-toast';
+    t.setAttribute('role', 'status');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 4000);
+  }
+
+  // ── The bar ────────────────────────────────────────────────────────────────
+  function ccCloseBar() {
+    var bar = document.getElementById('cc-bar');
+    if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
+    document.body.classList.remove('cc-open');
+  }
+
+  function ccDecide(analytics, msg) {
+    ccWrite(analytics);
+    ccApply(analytics);
+    ccCloseBar();
+    ccClosePanel(true);
+    if (msg) ccToast(msg);
+  }
+
+  function ccShowBar() {
+    if (document.getElementById('cc-bar')) return;
+    var bar = document.createElement('div');
+    bar.id = 'cc-bar';
+    bar.setAttribute('role', 'region');
+    bar.setAttribute('aria-label', 'Cookie consent');
+    bar.innerHTML =
+        '<div class="cc-in">'
+      + '<div class="cc-copy">'
+      + '<p class="cc-t">We use cookies</p>'
+      + '<p class="cc-x">One cookie remembers this choice. Analytics cookies, '
+      + 'which show us which pages people find useful, are only set if you '
+      + 'agree — and you can change your mind at any time. '
+      + '<a href="cookies.html">Cookie Policy</a> &middot; '
+      + '<a href="privacy.html">Privacy Policy</a>'
+      + '</p></div>'
+      + '<div class="cc-acts">'
+      + '<button type="button" class="cc-btn cc-yes" id="ccYes">Accept all</button>'
+      + '<button type="button" class="cc-btn cc-no" id="ccNo">Reject all</button>'
+      + '<button type="button" class="cc-man" id="ccMan">Manage cookies</button>'
+      + '</div></div>';
+    document.body.appendChild(bar);
+    // Hides #stb (back-to-top) for as long as the bar is up — see main.css.
+    document.body.classList.add('cc-open');
+
+    document.getElementById('ccYes').addEventListener('click', function () {
+      ccDecide(true, 'Thanks — analytics cookies are on.');
+    });
+    document.getElementById('ccNo').addEventListener('click', function () {
+      ccDecide(false, 'Analytics cookies stay off.');
+    });
+    document.getElementById('ccMan').addEventListener('click', function () {
+      openConsentPanel();
+    });
+  }
+
+  // ── The preferences panel ──────────────────────────────────────────────────
+  var ccLastFocus = null;
+
+  function ccClosePanel(skipFocus) {
+    var m = document.getElementById('cc-modal');
+    if (!m) return;
+    if (m.parentNode) m.parentNode.removeChild(m);
+    document.removeEventListener('keydown', ccPanelKeys, true);
+    document.body.style.overflow = '';
+    if (!skipFocus && ccLastFocus && ccLastFocus.focus) ccLastFocus.focus();
+    ccLastFocus = null;
+  }
+
+  function ccPanelKeys(e) {
+    var m = document.getElementById('cc-modal');
+    if (!m) return;
+    // Escape cancels. It does NOT count as consent — anything undecided stays
+    // denied and the bar comes back.
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      e.preventDefault();
+      ccClosePanel();
+      if (!ccRead()) ccShowBar();
+      return;
+    }
+    if (e.key !== 'Tab' && e.keyCode !== 9) return;
+    var f = m.querySelectorAll('button, input, a[href]');
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
+  function openConsentPanel() {
+    if (document.getElementById('cc-modal')) return;
+    var saved = ccRead();
+    var on = !!(saved && saved.analytics);
+    ccLastFocus = document.activeElement;
+    ccCloseBar();   // the bar would sit under the overlay
+
+    var m = document.createElement('div');
+    m.id = 'cc-modal';
+    m.setAttribute('role', 'dialog');
+    m.setAttribute('aria-modal', 'true');
+    m.setAttribute('aria-labelledby', 'ccModTitle');
+    m.innerHTML =
+        '<div class="cc-card">'
+      + '<div class="cc-card-h">'
+      + '<h2 id="ccModTitle">Cookie preferences</h2>'
+      + '<button type="button" class="cc-close" id="ccX" aria-label="Close cookie preferences">&#x2715;</button>'
+      + '</div>'
+      + '<p class="cc-lead">Choose which cookies we may use. Necessary cookies '
+      + 'cannot be switched off; everything else is off until you turn it on. '
+      + 'Full details are in our <a href="cookies.html">Cookie Policy</a>.</p>'
+
+      + '<div class="cc-row">'
+      + '<div class="cc-row-b">'
+      + '<p class="cc-row-t">Strictly necessary</p>'
+      + '<p class="cc-row-d">One cookie, <code>az_consent</code>, which records '
+      + 'the choice you make here so we do not ask again for 180 days. It is '
+      + 'written only after you choose, contains no personal data, and does not '
+      + 'track you.</p>'
+      + '</div><span class="cc-locked">Always on</span></div>'
+
+      + '<div class="cc-row">'
+      + '<div class="cc-row-b">'
+      + '<p class="cc-row-t">Analytics</p>'
+      + '<p class="cc-row-d">Google Analytics 4 (<code>_ga</code>, '
+      + '<code>_ga_&#42;</code>) tells us how many people visit, which pages they '
+      + 'read and where they arrived from. It is aggregated and never used to '
+      + 'contact you. Off by default.</p>'
+      + '</div>'
+      + '<label class="cc-sw">'
+      + '<input type="checkbox" id="ccAn" ' + (on ? 'checked' : '')
+      + ' aria-label="Allow analytics cookies"/><span aria-hidden="true"></span>'
+      + '</label></div>'
+
+      + '<div class="cc-card-f">'
+      + '<button type="button" class="cc-btn cc-no" id="ccModNo">Reject all</button>'
+      + '<button type="button" class="cc-btn cc-save" id="ccModSave">Save my choices</button>'
+      + '<button type="button" class="cc-btn cc-yes" id="ccModYes">Accept all</button>'
+      + '</div></div>';
+    document.body.appendChild(m);
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', ccPanelKeys, true);
+
+    var an = document.getElementById('ccAn');
+    if (an) an.focus();
+
+    document.getElementById('ccX').addEventListener('click', function () {
+      ccClosePanel();
+      if (!ccRead()) ccShowBar();   // no decision yet → keep asking
+    });
+    m.addEventListener('click', function (e) {
+      if (e.target !== m) return;   // backdrop click = cancel, not consent
+      ccClosePanel();
+      if (!ccRead()) ccShowBar();
+    });
+    document.getElementById('ccModNo').addEventListener('click', function () {
+      ccDecide(false, 'Analytics cookies stay off.');
+    });
+    document.getElementById('ccModYes').addEventListener('click', function () {
+      ccDecide(true, 'Thanks — analytics cookies are on.');
+    });
+    document.getElementById('ccModSave').addEventListener('click', function () {
+      var yes = !!(an && an.checked);
+      ccDecide(yes, yes ? 'Preferences saved — analytics cookies are on.'
+                        : 'Preferences saved — analytics cookies are off.');
+    });
+  }
+
+  // Public hook: the footer button and cookies.html both call this.
+  window.azCookieSettings = openConsentPanel;
+
+  function buildConsent() {
+    var saved = ccRead();
+    if (!saved) { ccShowBar(); return; }
+    // A stored Accept is already handled in <head> so GA is not delayed by this
+    // file; re-applying a stored Reject is cheap and keeps the two in step.
+    if (!saved.analytics) ccApply(false);
   }
 
   // ── Scroll reveal ──────────────────────────────────────────────────────────
@@ -471,6 +740,11 @@
   // ── Boot ───────────────────────────────────────────────────────────────────
   function init() {
     try {
+      // First, and in its own try/catch: an unrelated failure further down must
+      // never leave a visitor with no way to accept or refuse cookies.
+      try { buildConsent(); } catch (ccErr) {
+        if (window.console) console.warn('Consent init error:', ccErr);
+      }
       buildNav();
       buildPartners();
       buildFooter();

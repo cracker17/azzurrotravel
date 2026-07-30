@@ -4,12 +4,33 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 
-<!-- Google tag (gtag.js) — held back until the visitor interacts or the page
-     goes idle, so the 147 KB tag never competes with first paint. -->
+<!-- Google tag (gtag.js) + Consent Mode v2 — CONSENT GATE.
+     Under the ePrivacy Directive / GDPR analytics cookies need prior opt-in, so
+     analytics_storage defaults to 'denied' and the 147 KB tag is not even
+     requested until the visitor accepts. Nothing here reads or writes anything
+     but the strictly-necessary az_consent cookie.
+
+     The banner, the cookie and the withdraw flow live in assets/js/main.js
+     (buildConsent). This block only holds what must run in <head>, before any
+     hit could be queued: the denied-by-default signal, the loader, and the
+     window.azAnalyticsOn() hook main.js calls on Accept.
+
+     Once consent exists the tag is still held back until the visitor interacts
+     or the page goes idle, so it never competes with first paint. -->
 <script>
   (function () {
     window.dataLayer = window.dataLayer || [];
     window.gtag = function () { dataLayer.push(arguments); };
+
+    // Must be pushed BEFORE the config call, or the first hit escapes the gate.
+    gtag('consent', 'default', {
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'granted',
+      'security_storage': 'granted'
+    });
     gtag('js', new Date());
     gtag('config', 'G-X274SBTEZV', { 'send_page_view': false });
 
@@ -33,14 +54,34 @@
       s.src = 'https://www.googletagmanager.com/gtag/js?id=G-X274SBTEZV';
       document.head.appendChild(s);
     }
-    ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'].forEach(function (t) {
-      window.addEventListener(t, loadGA, { once: true, passive: true });
-    });
-    // No interaction: wait for load, then for an idle slot on the main thread.
-    window.addEventListener('load', function () {
+
+    var armed = false;
+    function idle() {
       if (window.requestIdleCallback) requestIdleCallback(loadGA, { timeout: 4000 });
       else setTimeout(loadGA, 2500);
-    });
+    }
+    function armGA() {
+      if (armed) return;
+      armed = true;
+      ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'].forEach(function (t) {
+        window.addEventListener(t, loadGA, { once: true, passive: true });
+      });
+      // No interaction: wait for load, then for an idle slot on the main thread.
+      // Consent can arrive after 'load' has already fired, hence the readyState
+      // check — otherwise a click on Accept late in the visit never loads it.
+      if (document.readyState === 'complete') idle();
+      else window.addEventListener('load', idle);
+    }
+
+    // Called by buildConsent() in main.js the moment analytics is accepted.
+    window.azAnalyticsOn = function () {
+      gtag('consent', 'update', { 'analytics_storage': 'granted' });
+      armGA();
+    };
+
+    // Returning visitor with a stored Accept: no need to wait for main.js.
+    var c = document.cookie.match(/(?:^|;\s*)az_consent=([^;]*)/);
+    if (c && /^v1-analytics1-/.test(decodeURIComponent(c[1]))) window.azAnalyticsOn();
   })();
 </script>
 
@@ -80,7 +121,7 @@
      loading it asynchronously (the previous rel=preload/onload swap) meant the
      whole page painted unstyled first and then reflowed. That was the single
      largest contributor to the 0.83 CLS. -->
-<link rel="stylesheet" href="assets/css/main.min.css?v=14"/>
+<link rel="stylesheet" href="assets/css/main.min.css?v=15"/>
 
 <!-- Structured Data -->
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Terms of Service | Azzurro Travel","description":"Terms governing the use of Azzurro Travel's website and travel-booking services.","url":"https://azzurrotravel.com/terms.html","publisher":{"@type":"TravelAgency","name":"Azzurro Travel, Inc."}}</script>
@@ -204,7 +245,7 @@
 <button id="stb" aria-label="Back to top"><svg aria-hidden="true"><use href="#i-up"/></svg></button>
 
 <!-- Site scripts -->
-<script src="assets/js/icons.min.js?v=14" defer></script>
-<script src="assets/js/main.min.js?v=14" defer></script>
+<script src="assets/js/icons.min.js?v=15" defer></script>
+<script src="assets/js/main.min.js?v=15" defer></script>
 </body>
 </html>

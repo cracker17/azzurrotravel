@@ -4,12 +4,33 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 
-<!-- Google tag (gtag.js) — held back until the visitor interacts or the page
-     goes idle, so the 147 KB tag never competes with first paint. -->
+<!-- Google tag (gtag.js) + Consent Mode v2 — CONSENT GATE.
+     Under the ePrivacy Directive / GDPR analytics cookies need prior opt-in, so
+     analytics_storage defaults to 'denied' and the 147 KB tag is not even
+     requested until the visitor accepts. Nothing here reads or writes anything
+     but the strictly-necessary az_consent cookie.
+
+     The banner, the cookie and the withdraw flow live in assets/js/main.js
+     (buildConsent). This block only holds what must run in <head>, before any
+     hit could be queued: the denied-by-default signal, the loader, and the
+     window.azAnalyticsOn() hook main.js calls on Accept.
+
+     Once consent exists the tag is still held back until the visitor interacts
+     or the page goes idle, so it never competes with first paint. -->
 <script>
   (function () {
     window.dataLayer = window.dataLayer || [];
     window.gtag = function () { dataLayer.push(arguments); };
+
+    // Must be pushed BEFORE the config call, or the first hit escapes the gate.
+    gtag('consent', 'default', {
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'granted',
+      'security_storage': 'granted'
+    });
     gtag('js', new Date());
     gtag('config', 'G-X274SBTEZV', { 'send_page_view': false });
 
@@ -33,14 +54,34 @@
       s.src = 'https://www.googletagmanager.com/gtag/js?id=G-X274SBTEZV';
       document.head.appendChild(s);
     }
-    ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'].forEach(function (t) {
-      window.addEventListener(t, loadGA, { once: true, passive: true });
-    });
-    // No interaction: wait for load, then for an idle slot on the main thread.
-    window.addEventListener('load', function () {
+
+    var armed = false;
+    function idle() {
       if (window.requestIdleCallback) requestIdleCallback(loadGA, { timeout: 4000 });
       else setTimeout(loadGA, 2500);
-    });
+    }
+    function armGA() {
+      if (armed) return;
+      armed = true;
+      ['scroll', 'mousemove', 'touchstart', 'keydown', 'click'].forEach(function (t) {
+        window.addEventListener(t, loadGA, { once: true, passive: true });
+      });
+      // No interaction: wait for load, then for an idle slot on the main thread.
+      // Consent can arrive after 'load' has already fired, hence the readyState
+      // check — otherwise a click on Accept late in the visit never loads it.
+      if (document.readyState === 'complete') idle();
+      else window.addEventListener('load', idle);
+    }
+
+    // Called by buildConsent() in main.js the moment analytics is accepted.
+    window.azAnalyticsOn = function () {
+      gtag('consent', 'update', { 'analytics_storage': 'granted' });
+      armGA();
+    };
+
+    // Returning visitor with a stored Accept: no need to wait for main.js.
+    var c = document.cookie.match(/(?:^|;\s*)az_consent=([^;]*)/);
+    if (c && /^v1-analytics1-/.test(decodeURIComponent(c[1]))) window.azAnalyticsOn();
   })();
 </script>
 
@@ -80,7 +121,7 @@
      loading it asynchronously (the previous rel=preload/onload swap) meant the
      whole page painted unstyled first and then reflowed. That was the single
      largest contributor to the 0.83 CLS. -->
-<link rel="stylesheet" href="assets/css/main.min.css?v=14"/>
+<link rel="stylesheet" href="assets/css/main.min.css?v=15"/>
 
 <!-- Structured Data -->
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Privacy Policy | Azzurro Travel","description":"How Azzurro Travel collects, uses, and protects your personal information.","url":"https://azzurrotravel.com/privacy.html","publisher":{"@type":"TravelAgency","name":"Azzurro Travel, Inc."}}</script>
@@ -95,6 +136,7 @@
   .legal-wrap p { margin-bottom:14px;color:#2a3441 }
   .legal-wrap ul { margin:0 0 18px 22px;color:#2a3441 }
   .legal-wrap ul li { margin-bottom:7px }
+  .legal-wrap code { font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:var(--gdk) }
   .legal-wrap a { color:var(--blue);text-decoration:underline;text-decoration-color:rgba(28,104,181,.35);text-underline-offset:3px }
   .legal-wrap a:hover { text-decoration-color:var(--blue) }
   .legal-meta { font-size:13px;color:#6b7280;border-left:3px solid var(--gold);padding:10px 16px;background:rgba(196,146,58,.06);border-radius:0 6px 6px 0;margin-bottom:36px }
@@ -174,12 +216,13 @@
       <p>We use administrative, technical, and physical safeguards designed to protect your information against unauthorized access, alteration, disclosure, or destruction. Our website uses HTTPS encryption, and payment data is handled through PCI-compliant processors. No system is perfectly secure, however, and we cannot guarantee absolute security.</p>
 
       <h2>5. Cookies and Tracking</h2>
-      <p>Our site uses cookies and similar technologies for these purposes:</p>
+      <p>Our site uses cookies and similar technologies for two purposes only:</p>
       <ul>
-        <li><strong>Essential:</strong> required for the site to function (for example, remembering form input within a session).</li>
-        <li><strong>Analytics:</strong> Google Analytics (gtag.js) helps us understand how visitors use the site so we can improve it. Google may use this data subject to its own privacy policy.</li>
+        <li><strong>Strictly necessary:</strong> a single first-party cookie, <code>az_consent</code>, which records the cookie choice you made so we do not ask again for 180 days. It contains no personal data and is written only after you choose.</li>
+        <li><strong>Analytics:</strong> Google Analytics 4 helps us understand how visitors use the site so we can improve it. Google may use this data subject to its own privacy policy.</li>
       </ul>
-      <p>You can disable cookies in your browser settings, but some features may not work as intended. You may opt out of Google Analytics by installing the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics Opt-out Browser Add-on</a>.</p>
+      <p>Analytics cookies are <strong>off until you opt in</strong>. As required by the GDPR and the ePrivacy Directive — and applied to every visitor, not only European ones — the Google Analytics tag is not even downloaded before you accept, refusing is as easy as accepting, and ignoring the banner counts as a refusal. You can change or withdraw your choice at any time through the "Cookie Settings" link in the footer of every page; withdrawing also deletes the analytics cookies that were set while your consent applied.</p>
+      <p>Our <a href="cookies.html">Cookie Policy</a> lists every cookie individually, with its provider, purpose and duration. You can also block or delete cookies in your browser settings, or opt out of Google Analytics everywhere by installing the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics Opt-out Browser Add-on</a>.</p>
 
       <h2>6. Your Rights</h2>
       <p>Depending on where you live, you may have the right to:</p>
@@ -223,7 +266,7 @@
 <button id="stb" aria-label="Back to top"><svg aria-hidden="true"><use href="#i-up"/></svg></button>
 
 <!-- Site scripts -->
-<script src="assets/js/icons.min.js?v=14" defer></script>
-<script src="assets/js/main.min.js?v=14" defer></script>
+<script src="assets/js/icons.min.js?v=15" defer></script>
+<script src="assets/js/main.min.js?v=15" defer></script>
 </body>
 </html>
