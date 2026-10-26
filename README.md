@@ -177,4 +177,21 @@ confirmed submission.
 
 ## Deployment
 
-Static site. Run `npm run build`, then upload everything except `node_modules/`.
+The live site runs on Hostinger (the old Vercel project is a leftover and not
+what azzurrotravel.com serves). Every push to `main` deploys it automatically:
+`.github/workflows/deploy.yml` runs `npm run build`, then uploads the changed
+files over FTP. `node_modules/`, `.github/`, `README.md`, `build.mjs` and
+`package*.json` are never uploaded.
+
+One-time setup, in the GitHub repo under Settings > Secrets and variables > Actions:
+
+- Secrets: `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD` (hPanel > Files > FTP Accounts).
+- Variable: `FTP_SERVER_DIR`, the site root as seen from the FTP login, with a
+  trailing slash. Usually `public_html/`; use `./` if the FTP account already
+  opens inside `public_html`. The deploy job is skipped until this is set.
+- Optional variable: `FTP_PROTOCOL`, `ftp` (default) or `ftps`.
+
+To check a path before the first real upload, run the workflow by hand from the
+Actions tab with "dry run" ticked. It lists what would change and uploads nothing.
+
+Manual fallback: run `npm run build`, then upload everything except the files above.

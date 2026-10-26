@@ -1,0 +1,65 @@
+# Deploy azzurrotravel.com to Hostinger over FTP on every push to main.
+#
+# One-time setup (GitHub repo > Settings > Secrets and variables > Actions):
+#   Secrets:   FTP_SERVER, FTP_USERNAME, FTP_PASSWORD   (hPanel > Files > FTP Accounts)
+#   Variable:  FTP_SERVER_DIR  - the site root as seen from the FTP login, with a
+#              trailing slash. Usually "public_html/"; if the FTP account already
+#              opens inside public_html, use "./". The job is skipped until this is set.
+#   Optional:  FTP_PROTOCOL    - "ftp" (default) or "ftps".
+#
+# Only changed files are uploaded (the action keeps .ftp-deploy-sync-state.json on
+# the server). Files on the server that never came from this repo are left alone.
+# Run it by hand from the Actions tab; tick "dry run" to list what would change.
+
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (list changes, upload nothing)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-hostinger
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: vars.FTP_SERVER_DIR != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Regenerate the .min. assets so the live site always matches the sources.
+      - run: npm ci
+      - run: npm run build
+
+      - uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ${{ vars.FTP_PROTOCOL || 'ftp' }}
+          local-dir: ./
+          server-dir: ${{ vars.FTP_SERVER_DIR }}
+          dry-run: ${{ inputs.dry_run || false }}
+          # Listing exclude replaces the action's defaults, so .git and node_modules are repeated here.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .github/**
+            README.md
+            build.mjs
+            package.json
+            package-lock.json
